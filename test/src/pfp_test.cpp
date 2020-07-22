@@ -121,6 +121,18 @@ TEST(sa_construct_test, paper_example)
         rev_dict.push_back({s,rank++});
     }
     std::sort(rev_dict.begin(),rev_dict.end());
+
+    std::vector<uint32_t> rev_dict_lcp(rev_dict.size(),0);
+    for(int i = 1; i < rev_dict.size(); ++i)
+    {
+        std::string& a = rev_dict[i-1].first;
+        std::string& b = rev_dict[i].first;
+        size_t lcp_i = 0;
+        while(lcp_i < std::min(a.size(), b.size()) && a[lcp_i] == b[lcp_i])
+            lcp_i++;
+        
+        rev_dict_lcp[i] = lcp_i;
+    }
     
     std::vector<uint32_t> frequencies{0, 1, 2, 1, 1, 1};
     size_t w = 2;
@@ -193,6 +205,11 @@ TEST(sa_construct_test, paper_example)
         }
     };
     std::sort(sa.begin(), sa.end(), cyclic_sort);
+
+
+
+    for(size_t i = 0; i < pf.dict.lcps.size(); ++i)
+        EXPECT_EQ(pf.dict.lcps[i], rev_dict_lcp[i]) << "at position: " << i;
 
     // TEST BWT(P) - wavelet tree
     for (size_t i = 0; i < pf.w_wt.size(); ++i)

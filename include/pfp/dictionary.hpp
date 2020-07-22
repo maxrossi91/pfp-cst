@@ -52,6 +52,7 @@ public:
   sdsl::rmq_succinct_sct<> rmq_colex_daD;
   sdsl::range_maximum_sct<>::type rMq_colex_daD;
   std::vector<uint_t> colex_id;
+  std::vector<uint_t> lcps; // Longest common phrase suffix in colex order
 
   bool saD_flag = false;
   bool isaD_flag = false;
@@ -268,6 +269,7 @@ public:
 
   void compute_colex_da(){
     colex_id.resize(n_phrases());
+    lcps.resize(n_phrases(),0);
     std::vector<uint_t> inv_colex_id(n_phrases()); // I am using it as starting positions
     for (int i = 0, j = 0; i < d.size(); ++i)
       if (d[i + 1] == EndOfWord)
@@ -309,6 +311,7 @@ public:
           tmp_id[index] = colex_id[i];
         }
 
+        uint_t depth = lcps[end-1];
         // Recursion
         size_t tmp_start = 0;
         for (size_t i = 0; i < 256; ++i)
@@ -320,7 +323,20 @@ public:
           }
           end = start + count[i];
           if (i > EndOfWord){
-            buckets.push({start, end});
+            if(end > start + 1)
+            {
+              buckets.push({start, end});
+              if(end > bucket.first + 1) // is not the first elemnt of the bucket
+                lcps[end-1] = depth + 1;
+            }
+            else if(end > start && end > bucket.first + 1) // is not the first elemnt of the bucket
+              lcps[end-1] = depth ;
+
+          }else{
+
+            for (size_t j = (start == bucket.first?1:0); j < count[i]; ++j)
+              lcps[start + j] = depth;
+
           }
           start = end;
         }
@@ -365,6 +381,7 @@ public:
     written_bytes += rmq_colex_daD.serialize(out, child, "rmq_colex_daD");
     written_bytes += rMq_colex_daD.serialize(out, child, "rMq_colex_daD");
     written_bytes += my_serialize(colex_id, out, child, "colex_id");
+    written_bytes += my_serialize(lcps, out, child, "lcps");
     // written_bytes += sdsl::serialize(d, out, child, "dictionary");
     // written_bytes += sdsl::serialize(saD, out, child, "saD");
     // written_bytes += sdsl::serialize(isaD, out, child, "isaD");
@@ -400,6 +417,7 @@ public:
     rmq_colex_daD.load(in);
     rMq_colex_daD.load(in);
     my_load(colex_id, in);
+    my_load(lcps, in);
     // sdsl::load(d, in);
     // sdsl::load(saD, in);
     // sdsl::load(isaD, in);
