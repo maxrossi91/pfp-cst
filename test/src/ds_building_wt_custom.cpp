@@ -51,7 +51,7 @@ int main(int argc, char* const argv[]) {
   verbose("Computing PFP data structures");
   std::chrono::high_resolution_clock::time_point t_insert_start = std::chrono::high_resolution_clock::now();
 
-  pf_parsing<pfp_wt_custom> pf(args.filename, args.w);
+  pf_parsing<pfp_wt_custom,sdsl::bit_vector> pf(args.filename, args.w);
 
   std::chrono::high_resolution_clock::time_point t_insert_end = std::chrono::high_resolution_clock::now();
 

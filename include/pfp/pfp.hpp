@@ -38,7 +38,8 @@ extern "C" {
 #include<parse.hpp>
 #include <wt.hpp>
 
-template<class wt_t = pfp_wt_custom>
+template< class wt_t = pfp_wt_custom,
+          class bv_t = sdsl::bit_vector>
 class pf_parsing{
 public:
   struct M_entry_t{
@@ -54,16 +55,16 @@ public:
   size_t n; // Size of the text
   size_t w; // Size of the window
 
-  sdsl::bit_vector b_bwt;
-  sdsl::bit_vector::rank_1_type b_bwt_rank_1;
-  sdsl::bit_vector::select_1_type b_bwt_select_1;
+  bv_t b_bwt;
+  typename bv_t::rank_1_type b_bwt_rank_1;
+  typename bv_t::select_1_type b_bwt_select_1;
   std::vector<M_entry_t> M;
 
   wt_t w_wt;
 
-  sdsl::bit_vector b_p;
-  sdsl::bit_vector::rank_1_type rank_b_p;
-  sdsl::bit_vector::select_1_type select_b_p;
+  bv_t b_p;
+  typename bv_t::rank_1_type rank_b_p;
+  typename bv_t::select_1_type select_b_p;
 
   typedef size_t size_type;
 
