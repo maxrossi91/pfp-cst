@@ -47,7 +47,7 @@ public:
     return pfp.n;
   }
 
-  uint32_t sa(uint32_t i) {
+  size_t sa(size_t i) {
     // i + 1 -> rank is for (0 ... i - 1) interval
     const auto rank_i = pfp.b_bwt_rank_1(i + 1);
     const auto lex_rank_i = rank_i - 1;
@@ -58,7 +58,7 @@ public:
     // rank + 1 because its 0-based and select is 1-based
     const auto k = pfp.w_wt.range_select(m.left, m.right, interval_rank + 1);
 
-    uint32_t p_i;
+    size_t p_i;
     if (pfp.pars.saP[k + 1] > 0)
       p_i = pfp.pars.saP[k + 1] - 1;
     else
