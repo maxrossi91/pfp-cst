@@ -31,6 +31,9 @@ target_link_libraries(sdsl_baseline_csa common strdup sdsl divsufsort divsufsort
 add_executable(sdsl_wt_test sdsl_wt_test.cpp)
 target_link_libraries(sdsl_wt_test common strdup sdsl divsufsort divsufsort64 malloc_count)
 
+add_executable(sdsl_wm_test sdsl_wm_test.cpp)
+target_link_libraries(sdsl_wm_test common strdup sdsl divsufsort divsufsort64 malloc_count)
+
 add_executable(lce_test lce_test.cpp)
 target_link_libraries(lce_test common strdup pfp gsacak sdsl divsufsort divsufsort64 malloc_count gtest_main pthread)
 

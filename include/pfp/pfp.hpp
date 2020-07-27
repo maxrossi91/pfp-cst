@@ -30,16 +30,20 @@
 #include <sdsl/rmq_support.hpp>
 #include <sdsl/int_vector.hpp>
 #include <sdsl/wavelet_trees.hpp>
-extern "C" {
-    #include<gsacak.h>
-}
+#include <sdsl/sd_vector.hpp>
 
 #include<dictionary.hpp>
 #include<parse.hpp>
 #include <wt.hpp>
+#include <wm.hpp>
+
+extern "C" {
+    #include<gsacak.h>
+}
+
 
 template< class wt_t = pfp_wt_custom,
-          class bv_t = sdsl::bit_vector>
+          class bv_t = sdsl::bit_vector>//sdsl::sd_vector<>>
 class pf_parsing{
 public:
   struct M_entry_t{
@@ -65,6 +69,9 @@ public:
   bv_t b_p;
   typename bv_t::rank_1_type rank_b_p;
   typename bv_t::select_1_type select_b_p;
+
+  wm_t<> s_lcp_T; // LCP array of T sampled in corrispondence of the beginning of each phrase.
+  sdsl::rmq_succinct_sct<> rmq_s_lcp_T;
 
   typedef size_t size_type;
 
@@ -94,6 +101,9 @@ public:
 
     verbose("Computing W of BWT(P)");
     _elapsed_time(build_W());
+
+    verbose("Computing S_LCP_T");
+    _elapsed_time(build_s_lcp_T());
 
     // Clear unnecessary elements
     clear_unnecessary_elements();
@@ -126,6 +136,9 @@ public:
     verbose("Computing W of BWT(P)");
     _elapsed_time(build_W());
 
+    verbose("Computing S_LCP_T");
+    _elapsed_time(build_s_lcp_T());
+
     // Clear unnecessary elements
     clear_unnecessary_elements();
   }
@@ -148,8 +161,8 @@ public:
     }
 
     // Build rank and select on Sp
-    rank_b_p = sdsl::bit_vector::rank_1_type(&b_p);
-    select_b_p = sdsl::bit_vector::select_1_type(&b_p);
+    rank_b_p = typename bv_t::rank_1_type(&b_p);
+    select_b_p = typename bv_t::select_1_type(&b_p);
   }
 
   void compute_n(){
@@ -229,8 +242,8 @@ public:
     }
 
     // rank & select support for b_bwt
-    b_bwt_rank_1 = sdsl::bit_vector::rank_1_type(&b_bwt);
-    b_bwt_select_1 = sdsl::bit_vector::select_1_type(&b_bwt);
+    b_bwt_rank_1 = typename bv_t::rank_1_type(&b_bwt);
+    b_bwt_select_1 = typename bv_t::select_1_type(&b_bwt);
   }
 
   void build_W() {
@@ -251,6 +264,44 @@ public:
     }
 
     w_wt.construct(alphabet, bwt_p);
+  }
+
+  // Customized Kasai et al.
+  void build_s_lcp_T()
+  {
+    size_t n = pars.saP.size();
+    sdsl::int_vector<> s_lcp_T_(n, 0);
+
+    size_t l = 0;
+    size_t lt = 0;
+    for (size_t i = 0; i < n; ++i)
+    {
+      // if i is the last character LCP is not defined
+      size_t k = pars.isaP[i];
+      if (k > 0)
+      {
+        size_t j = pars.saP[k - 1];
+        // I find the longest common prefix of the i-th suffix and the j-th suffix.
+        while (pars.p[i + l] == pars.p[j + l])
+        {
+          lt += dict.length_of_phrase(pars.p[i + l]) - w; // I remove the last w overlapping characters
+          l++;
+        }
+        size_t lcpp = dict.longest_common_phrase_prefix(pars.p[i + l], pars.p[j + l]);
+
+        // l stores the length of the longest common prefix between the i-th suffix and the j-th suffix
+        s_lcp_T_[k] = lt + lcpp;
+        if (l > 0)
+        {
+          l--;
+          lt -= dict.length_of_phrase(pars.p[i]) - w; // I have to remove the length of the first matching phrase
+        }
+      }
+    }
+
+    rmq_s_lcp_T = sdsl::rmq_succinct_sct<>(&s_lcp_T_);
+
+    sdsl::construct_im(s_lcp_T, s_lcp_T);
   }
 
   void clear_unnecessary_elements(){
@@ -281,6 +332,8 @@ public:
     written_bytes += b_p.serialize(out, child, "b_p");
     written_bytes += rank_b_p.serialize(out, child, "rank_b_p");
     written_bytes += select_b_p.serialize(out, child, "select_b_p");
+    written_bytes += s_lcp_T.serialize(out, child, "s_lcp_T");
+    written_bytes += rmq_s_lcp_T.serialize(out, child, "rmq_s_lcp_T");
     // written_bytes += dict.serialize(out, child, "dictionary");
     // written_bytes += pars.serialize(out, child, "parse");
     // written_bytes += sdsl::serialize(freq, out, child, "frequencies");
@@ -315,6 +368,8 @@ public:
     b_p.load(in);
     rank_b_p.load(in, &b_p);
     select_b_p.load(in, &b_p);
+    s_lcp_T.load(in);
+    rmq_s_lcp_T.load(in);
     // dict.load(in);
     // pars.load(in);
     // sdsl::load(freq, in);

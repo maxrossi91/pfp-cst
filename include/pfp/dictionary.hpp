@@ -362,6 +362,21 @@ public:
 
   }
 
+  size_t longest_common_phrase_prefix(size_t a, size_t b)
+  {
+    if (a == 0 || b == 0)
+      return 0;
+    // Compute the lcp between phrases a and b
+    auto a_in_sa = isaD[select_b_d(a)]; // position of the phrase a in saD
+    auto b_in_sa = isaD[select_b_d(b)]; // position of the phrase b in saD
+
+    auto lcp_left = std::min(a_in_sa, b_in_sa) + 1;
+    auto lcp_right = max(a_in_sa, b_in_sa);
+
+    size_t lcp_a_b_i = rmq_lcp_D(lcp_left, lcp_right);
+    return lcpD[lcp_a_b_i];
+  }
+
   // Serialize to a stream.
   size_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const
   {
