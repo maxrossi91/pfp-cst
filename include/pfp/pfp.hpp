@@ -42,8 +42,7 @@ extern "C" {
 }
 
 
-template< class wt_t = pfp_wt_custom,
-          class bv_t = sdsl::bit_vector>//sdsl::sd_vector<>>
+template< class wt_t = pfp_wt_custom>//sdsl::sd_vector<>>
 class pf_parsing{
 public:
   struct M_entry_t{
@@ -52,6 +51,7 @@ public:
     uint_t right;
   };
 
+  typedef sdsl::sd_vector<> bv_t;
 
   dictionary dict;
   parse pars;
@@ -145,21 +145,24 @@ public:
 
   void compute_b_p() {
     // Build the bitvector storing the position of the beginning of each phrase.
-    b_p.resize(this->n); // all should be initialized at false by sdsl
-    for(size_t i = 0; i < b_p.size(); ++i)
-      b_p[i] = false; // bug in resize
-    b_p[0] = true; // phrase_0 becomes phrase 1
-    
+    std::vector<size_t> onset;
+    onset.push_back(0); //b_p[0] = true;    // phrase_0 becomes phrase 1
+
     size_t i = 0;
-    
-    for(int j = 0; j < pars.p.size()-2; ++j){ // -2 because the beginning of the last phrase is in position 0
+
+    for (int j = 0; j < pars.p.size() - 2; ++j)
+    { // -2 because the beginning of the last phrase is in position 0
       // p[i]: phrase_id
       assert(pars.p[j] != 0);
       // phrase_length: select_b_d(p[i]+1)-select_b_d(p[i]);
       i += dict.length_of_phrase(pars.p[j]) - w;
-      b_p[i] = true;
+      onset.push_back(i); //b_p[i] = true;
     }
 
+    sdsl::sd_vector_builder builder(n, onset.size());
+    for (auto idx : onset)
+      builder.set(idx);
+    b_p = bv_t(builder);
     // Build rank and select on Sp
     rank_b_p = typename bv_t::rank_1_type(&b_p);
     select_b_p = typename bv_t::select_1_type(&b_p);
@@ -181,9 +184,10 @@ public:
   void build_b_bwt_and_M()
   {
     // Build the bitvector storing the position of the beginning of each phrase.
-    b_bwt.resize(n);
-    for (size_t i = 0; i < b_bwt.size(); ++i)
-      b_bwt[i] = false; // bug in resize
+    // b_bwt.resize(n);
+    // for (size_t i = 0; i < b_bwt.size(); ++i)
+    //   b_bwt[i] = false; // bug in resize
+    std::vector<size_t> onset;
 
     assert(dict.d[dict.saD[0]] == EndOfDict);
     size_t i = 1; // This should be safe since the first entry of sa is always the dollarsign used to compute the sa
@@ -205,7 +209,7 @@ public:
       {
         // use the RMQ data structure to find how many of the following suffixes are the same except for the terminator (so they're the same suffix but in different phrases)
         // use the document array and the table of phrase frequencies to find the phrases frequencies and sum them up
-        b_bwt[j++] = true;
+        onset.push_back(j++); //b_bwt[j++] = true;
         j += freq[phrase] - 1; // the next bits are 0s
         i++;
         if (i < dict.saD.size())
@@ -241,6 +245,10 @@ public:
       }
     }
 
+    sdsl::sd_vector_builder builder(n,onset.size());
+    for(auto idx: onset)
+      builder.set(idx);
+    b_bwt = bv_t(builder);
     // rank & select support for b_bwt
     b_bwt_rank_1 = typename bv_t::rank_1_type(&b_bwt);
     b_bwt_select_1 = typename bv_t::select_1_type(&b_bwt);
@@ -301,7 +309,7 @@ public:
 
     rmq_s_lcp_T = sdsl::rmq_succinct_sct<>(&s_lcp_T_);
 
-    sdsl::construct_im(s_lcp_T, s_lcp_T);
+    sdsl::construct_im(s_lcp_T, s_lcp_T_);
   }
 
   void clear_unnecessary_elements(){
@@ -389,7 +397,6 @@ public:
   {
     return ".pf.ds.other";
   }
-
 
 };
 

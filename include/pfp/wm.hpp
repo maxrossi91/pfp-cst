@@ -546,99 +546,101 @@ public:
   //   }
   // }
 
-  //! prev_2d searches points in the index interval [lb..rb] and value interval [vlb..vrb].
-  /*! \param lb     Left bound of index interval (inclusive)
-         *  \param rb     Right bound of index interval (inclusive)
-         *  \param vlb    Left bound of value interval (inclusive)
-         *  \param vrb    Right bound of value interval (inclusive)
-         *  \param report Should the matching points be returned?
-         *  \return Pair (#of found points, vector of points), the vector is empty when
-         *          report = false.
-         */
-  std::pair<size_type, std::pair<value_type, size_type>>
-  prev_2d(size_type lb, size_type rb, value_type vlb, value_type vrb) const
-  {
 
-    if (vrb > (1ULL << m_max_level))
-      vrb = (1ULL << m_max_level);
-    if (vlb > vrb)
-      return make_pair(0, point_vec_type());
-    size_type cnt_answers = 0;
-    point_vec_type point_vec;
-    if (lb <= rb)
-    {
-      std::vector<size_type> is(m_max_level + 1);
-      std::vector<size_type> rank_off(m_max_level + 1);
-      _prev_2d(root(), {lb, rb}, vlb, vrb, 0, is,
-                       rank_off, point_vec, cnt_answers);
-    }
-    return make_pair(cnt_answers, point_vec);
-  }
 
-  void
-  _prev_2d( node_type v, range_type r, value_type vlb,
-            value_type vrb, size_type ilb, std::vector<size_type> &is,
-            std::vector<size_type> &rank_off, point_type &point_vec,
-            size_type &cnt_answers)
-      const
-  {
-    using std::get;
-    if (get<0>(r) > get<1>(r))
-      return;
-    is[v.level] = v.offset + get<0>(r);
+  // //! prev_2d searches points in the index interval [lb..rb] and value interval [vlb..vrb].
+  // /*! \param lb     Left bound of index interval (inclusive)
+  //        *  \param rb     Right bound of index interval (inclusive)
+  //        *  \param vlb    Left bound of value interval (inclusive)
+  //        *  \param vrb    Right bound of value interval (inclusive)
+  //        *  \param report Should the matching points be returned?
+  //        *  \return Pair (#of found points, vector of points), the vector is empty when
+  //        *          report = false.
+  //        */
+  // std::pair<size_type, std::pair<value_type, size_type>>
+  // prev_2d(size_type lb, size_type rb, value_type vlb, value_type vrb) const
+  // {
 
-    if (v.level == m_max_level)
-    {
-      for (size_type j = 1; j <= sdsl::size(r); ++j)
-      {
-        size_type i = j;
-        size_type c = v.sym;
-        for (uint32_t k = m_max_level; k > 0; --k)
-        {
-          size_type offset = is[k - 1];
-          size_type rank_offset = rank_off[k - 1];
-          if (c & 1)
-          {
-            i = m_tree_select1(rank_offset + i) - offset + 1;
-          }
-          else
-          {
-            i = m_tree_select0(offset - rank_offset + i) - offset + 1;
-          }
-          c >>= 1;
-        }
-        point_vec = {is[0] + i - 1, v.sym};
-      }
-      cnt_answers += sdsl::size(r);
-      return;
-    }
-    else
-    {
-      rank_off[v.level] = m_tree_rank(is[v.level]);
-    }
-    size_type irb = ilb + (1ULL << (m_max_level - v.level));
-    size_type mid = (irb + ilb) >> 1;
+  //   if (vrb > (1ULL << m_max_level))
+  //     vrb = (1ULL << m_max_level);
+  //   if (vlb > vrb)
+  //     return make_pair(0, point_vec_type());
+  //   size_type cnt_answers = 0;
+  //   point_vec_type point_vec;
+  //   if (lb <= rb)
+  //   {
+  //     std::vector<size_type> is(m_max_level + 1);
+  //     std::vector<size_type> rank_off(m_max_level + 1);
+  //     _prev_2d(root(), {lb, rb}, vlb, vrb, 0, is,
+  //                      rank_off, point_vec, cnt_answers);
+  //   }
+  //   return make_pair(cnt_answers, point_vec);
+  // }
 
-    auto c_v = expand(v);
-    auto c_r = expand(v, r);
+  // void
+  // _prev_2d( node_type v, range_type r, value_type vlb,
+  //           value_type vrb, size_type ilb, std::vector<size_type> &is,
+  //           std::vector<size_type> &rank_off, point_type &point_vec,
+  //           size_type &cnt_answers)
+  //     const
+  // {
+  //   using std::get;
+  //   if (get<0>(r) > get<1>(r))
+  //     return;
+  //   is[v.level] = v.offset + get<0>(r);
 
-    point_type point_left;
-    point_type point_right;
+  //   if (v.level == m_max_level)
+  //   {
+  //     for (size_type j = 1; j <= sdsl::size(r); ++j)
+  //     {
+  //       size_type i = j;
+  //       size_type c = v.sym;
+  //       for (uint32_t k = m_max_level; k > 0; --k)
+  //       {
+  //         size_type offset = is[k - 1];
+  //         size_type rank_offset = rank_off[k - 1];
+  //         if (c & 1)
+  //         {
+  //           i = m_tree_select1(rank_offset + i) - offset + 1;
+  //         }
+  //         else
+  //         {
+  //           i = m_tree_select0(offset - rank_offset + i) - offset + 1;
+  //         }
+  //         c >>= 1;
+  //       }
+  //       point_vec = {is[0] + i - 1, v.sym};
+  //     }
+  //     cnt_answers += sdsl::size(r);
+  //     return;
+  //   }
+  //   else
+  //   {
+  //     rank_off[v.level] = m_tree_rank(is[v.level]);
+  //   }
+  //   size_type irb = ilb + (1ULL << (m_max_level - v.level));
+  //   size_type mid = (irb + ilb) >> 1;
 
-    size_type cnt_left = 0;
-    size_type cnt_right = 0;
+  //   auto c_v = expand(v);
+  //   auto c_r = expand(v, r);
 
-    if (!sdsl::empty(get<0>(c_r)) and vlb < mid and mid)
-    {
-      _range_search_2d(get<0>(c_v), get<0>(c_r), vlb,
-                       std::min(vrb, mid - 1), ilb, is, rank_off,
-                       point_left, cnt_left);
-    }
-    if (!sdsl::empty(get<1>(c_r)) and vrb >= mid)
-    {
-      _range_search_2d(get<1>(c_v), get<1>(c_r), std::max(mid, vlb),
-                       vrb, mid, is, rank_off, point_right, cnt_right);
-    }
-  }
+  //   point_type point_left;
+  //   point_type point_right;
+
+  //   size_type cnt_left = 0;
+  //   size_type cnt_right = 0;
+
+  //   if (!sdsl::empty(get<0>(c_r)) and vlb < mid and mid)
+  //   {
+  //     _range_search_2d(get<0>(c_v), get<0>(c_r), vlb,
+  //                      std::min(vrb, mid - 1), ilb, is, rank_off,
+  //                      point_left, cnt_left);
+  //   }
+  //   if (!sdsl::empty(get<1>(c_r)) and vrb >= mid)
+  //   {
+  //     _range_search_2d(get<1>(c_v), get<1>(c_r), std::max(mid, vlb),
+  //                      vrb, mid, is, rank_off, point_right, cnt_right);
+  //   }
+  // }
 };
 #endif /* end of include guard: _PFP_WM_HH */
