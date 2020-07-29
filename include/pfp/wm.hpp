@@ -45,6 +45,8 @@
 #include <queue>
 #include <utility>
 
+#define maxr(a, b) (a = ((a) > (b) ? (a) : (b)))
+
 template <class t_bitvector = sdsl::bit_vector,
           class t_rank = typename t_bitvector::rank_1_type,
           class t_select = typename t_bitvector::select_1_type,
@@ -178,7 +180,8 @@ public:
         if(n_ones > 0) // If no the first 0 is at the beginning
           pos = this->m_tree_select1(n_ones) + 1 - v.offset;
 
-        get<0>(r1) = std::max(get<0>(r1), pos);
+        // get<0>(r1) = std::max(get<0>(r1), pos);
+        maxr(get<0>(r1), pos);
       }
       else
       {
@@ -190,7 +193,8 @@ public:
           if(n_zeros > 0) // If no the first 1 is at the beginning
             pos = this->m_tree_select0(n_zeros) + 1 - v.offset;
 
-          get<0>(r1) = std::max(get<0>(r1), pos);
+          // get<0>(r1) = std::max(get<0>(r1), pos);
+          maxr(get<0>(r1), pos);
         }
         else
         {
@@ -200,33 +204,6 @@ public:
         }
         
       }
-
-      // if((h&mask) == 0 && c != 0)
-      // {
-      //   // Find the first 0 before c.
-      //   size_t pos = this->m_tree_select0(ic - this->m_tree_rank(ic)) - v.offset;
-      //   if(pos < get<0>(r1))
-      //     return; // The interval is of charater larger than h
-      //   get<1>(r1) =  pos;
-      // }
-      // else if((h&mask) == 0 && c == 0)
-      // {
-      //   // Find the length of run of 0s before c.
-      //   size_t pos = this->m_tree_select1(this->m_tree_rank(ic)) + 1 - v.offset;
-      //   get<0>(r1) = std::max(get<0>(r1), pos);
-      // }
-      // else if((h&mask) != 0 && c == 0)
-      // {
-      //   // The range is the position of c.
-      //   get<0>(r1) = get<1>(r1);
-      //   cmp = false;
-      // }
-      // else if((h&mask) != 0 && c != 0)
-      // {
-      //   // Find the length of run of 1s before c.
-      //   size_t pos = this->m_tree_select0(ic - this->m_tree_rank(ic)) + 1 - v.offset;
-      //   get<0>(r1) = std::max(get<0>(r1), pos);
-      // }
     }
 
     // Expand the node and the range in the nodes.
@@ -568,5 +545,100 @@ public:
   //           point_vec, cnt_answers, cmp);
   //   }
   // }
+
+  //! prev_2d searches points in the index interval [lb..rb] and value interval [vlb..vrb].
+  /*! \param lb     Left bound of index interval (inclusive)
+         *  \param rb     Right bound of index interval (inclusive)
+         *  \param vlb    Left bound of value interval (inclusive)
+         *  \param vrb    Right bound of value interval (inclusive)
+         *  \param report Should the matching points be returned?
+         *  \return Pair (#of found points, vector of points), the vector is empty when
+         *          report = false.
+         */
+  std::pair<size_type, std::pair<value_type, size_type>>
+  prev_2d(size_type lb, size_type rb, value_type vlb, value_type vrb) const
+  {
+
+    if (vrb > (1ULL << m_max_level))
+      vrb = (1ULL << m_max_level);
+    if (vlb > vrb)
+      return make_pair(0, point_vec_type());
+    size_type cnt_answers = 0;
+    point_vec_type point_vec;
+    if (lb <= rb)
+    {
+      std::vector<size_type> is(m_max_level + 1);
+      std::vector<size_type> rank_off(m_max_level + 1);
+      _prev_2d(root(), {lb, rb}, vlb, vrb, 0, is,
+                       rank_off, point_vec, cnt_answers);
+    }
+    return make_pair(cnt_answers, point_vec);
+  }
+
+  void
+  _prev_2d( node_type v, range_type r, value_type vlb,
+            value_type vrb, size_type ilb, std::vector<size_type> &is,
+            std::vector<size_type> &rank_off, point_type &point_vec,
+            size_type &cnt_answers)
+      const
+  {
+    using std::get;
+    if (get<0>(r) > get<1>(r))
+      return;
+    is[v.level] = v.offset + get<0>(r);
+
+    if (v.level == m_max_level)
+    {
+      for (size_type j = 1; j <= sdsl::size(r); ++j)
+      {
+        size_type i = j;
+        size_type c = v.sym;
+        for (uint32_t k = m_max_level; k > 0; --k)
+        {
+          size_type offset = is[k - 1];
+          size_type rank_offset = rank_off[k - 1];
+          if (c & 1)
+          {
+            i = m_tree_select1(rank_offset + i) - offset + 1;
+          }
+          else
+          {
+            i = m_tree_select0(offset - rank_offset + i) - offset + 1;
+          }
+          c >>= 1;
+        }
+        point_vec = {is[0] + i - 1, v.sym};
+      }
+      cnt_answers += sdsl::size(r);
+      return;
+    }
+    else
+    {
+      rank_off[v.level] = m_tree_rank(is[v.level]);
+    }
+    size_type irb = ilb + (1ULL << (m_max_level - v.level));
+    size_type mid = (irb + ilb) >> 1;
+
+    auto c_v = expand(v);
+    auto c_r = expand(v, r);
+
+    point_type point_left;
+    point_type point_right;
+
+    size_type cnt_left = 0;
+    size_type cnt_right = 0;
+
+    if (!sdsl::empty(get<0>(c_r)) and vlb < mid and mid)
+    {
+      _range_search_2d(get<0>(c_v), get<0>(c_r), vlb,
+                       std::min(vrb, mid - 1), ilb, is, rank_off,
+                       point_left, cnt_left);
+    }
+    if (!sdsl::empty(get<1>(c_r)) and vrb >= mid)
+    {
+      _range_search_2d(get<1>(c_v), get<1>(c_r), std::max(mid, vlb),
+                       vrb, mid, is, rank_off, point_right, cnt_right);
+    }
+  }
 };
 #endif /* end of include guard: _PFP_WM_HH */
