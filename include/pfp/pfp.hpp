@@ -64,6 +64,10 @@ public:
   typename bv_t::select_1_type b_bwt_select_1;
   std::vector<M_entry_t> M;
 
+  bv_t b_pps; // Bitvector witrh a 1 in correspondence of the 1s in b_bwt in saD order.
+  typename bv_t::rank_1_type b_pps_rank_1;
+  typename bv_t::select_1_type b_pps_select_1;
+
   wt_t w_wt;
 
   bv_t b_p;
@@ -96,8 +100,8 @@ public:
     verbose("Computing b_p");
     _elapsed_time(compute_b_p());
 
-    verbose("Computing b_bwt and M of the parsing");
-    _elapsed_time(build_b_bwt_and_M()); 
+    verbose("Computing b_bwt, b_pps, and M of the parsing");
+    _elapsed_time(build_b_bwt__b_pps_and_M());
 
     verbose("Computing W of BWT(P)");
     _elapsed_time(build_W());
@@ -130,8 +134,8 @@ public:
     verbose("Computing b_p");
     _elapsed_time(compute_b_p());
 
-    verbose("Computing b_bwt and M of the parsing");
-    _elapsed_time(build_b_bwt_and_M());
+    verbose("Computing b_bwt, b_pps, and M of the parsing");
+    _elapsed_time(build_b_bwt__b_pps_and_M());
 
     verbose("Computing W of BWT(P)");
     _elapsed_time(build_W());
@@ -181,13 +185,14 @@ public:
     //n += w - 1; // Changed after changind b_d in dict // -1 is for the first dollar + w because n is the length including the last w markers
   }
 
-  void build_b_bwt_and_M()
+  void build_b_bwt__b_pps_and_M()
   {
     // Build the bitvector storing the position of the beginning of each phrase.
     // b_bwt.resize(n);
     // for (size_t i = 0; i < b_bwt.size(); ++i)
     //   b_bwt[i] = false; // bug in resize
     std::vector<size_t> onset;
+    std::vector<size_t> onset_b_pps;
 
     assert(dict.d[dict.saD[0]] == EndOfDict);
     size_t i = 1; // This should be safe since the first entry of sa is always the dollarsign used to compute the sa
@@ -210,6 +215,8 @@ public:
         // use the RMQ data structure to find how many of the following suffixes are the same except for the terminator (so they're the same suffix but in different phrases)
         // use the document array and the table of phrase frequencies to find the phrases frequencies and sum them up
         onset.push_back(j++); //b_bwt[j++] = true;
+        onset_b_pps.push_back(i);
+
         j += freq[phrase] - 1; // the next bits are 0s
         i++;
         if (i < dict.saD.size())
@@ -252,6 +259,14 @@ public:
     // rank & select support for b_bwt
     b_bwt_rank_1 = typename bv_t::rank_1_type(&b_bwt);
     b_bwt_select_1 = typename bv_t::select_1_type(&b_bwt);
+
+    sdsl::sd_vector_builder builder_b_pps(n,onset.size());
+    for(auto idx: onset)
+      builder_b_pps.set(idx);
+    b_pps = bv_t(builder_b_pps);
+    // rank & select support for b_pps
+    b_pps_rank_1 = typename bv_t::rank_1_type(&b_pps);
+    b_pps_select_1 = typename bv_t::select_1_type(&b_pps);
   }
 
   void build_W() {
@@ -321,6 +336,31 @@ public:
     //    dict.rMq_colex_daD.clear();
   }
 
+  void print_sizes()
+  {
+
+    verbose("Parse");
+    verbose("Size of pars.p: ", pars.p.size() * sizeof(pars.p[0]));
+    verbose("Size of pars.saP: ", pars.saP.size() * sizeof(pars.saP[0]));
+    verbose("Size of pars.isaP: ", pars.isaP.size() * sizeof(pars.isaP[0]));
+
+
+    verbose("Dictionary");
+    verbose("Size of dict.d: ", dict.d.size() * sizeof(dict.d[0]));
+    verbose("Size of dict.saD: ", dict.saD.size() * sizeof(dict.saD[0]));
+    verbose("Size of dict.isaD: ", dict.isaD.size() * sizeof(dict.isaD[0]));
+    verbose("Size of dict.lcpD: ", dict.lcpD.size() * sizeof(dict.lcpD[0]));
+    verbose("Size of dict.rmq_lcp_D: ", sdsl::size_in_bytes(dict.rmq_lcp_D));
+
+    verbose("Size of dict.b_d: ", sdsl::size_in_bytes(dict.b_d));
+    verbose("Size of dict.rank_b_d: ", sdsl::size_in_bytes(dict.rank_b_d));
+    verbose("Size of dict.select_b_d: ", sdsl::size_in_bytes(dict.select_b_d));
+
+    verbose("PFP");
+    verbose("Size of s_lcp_T: ", s_lcp_T.size() * sizeof(s_lcp_T[0]));
+    verbose("Size of rmq_s_lcp_T: ", sdsl::size_in_bytes(rmq_s_lcp_T));
+  }
+
   // Serialize to a stream.
   size_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const
   {
@@ -336,6 +376,9 @@ public:
     written_bytes += b_bwt_rank_1.serialize(out, child, "b_bwt_rank_1");
     written_bytes += b_bwt_select_1.serialize(out, child, "b_bwt_select_1");
     written_bytes += sdsl::serialize(M, out, child, "M");
+    written_bytes += b_pps.serialize(out, child, "b_pps");
+    written_bytes += b_pps_rank_1.serialize(out, child, "b_pps_rank_1");
+    written_bytes += b_pps_select_1.serialize(out, child, "b_pps_select_1");
     written_bytes += w_wt.serialize(out, child, "w_wt");
     written_bytes += b_p.serialize(out, child, "b_p");
     written_bytes += rank_b_p.serialize(out, child, "rank_b_p");
@@ -372,6 +415,9 @@ public:
     b_bwt_rank_1.load(in, &b_bwt);
     b_bwt_select_1.load(in, &b_bwt);
     sdsl::load(M, in);
+    b_pps.load(in);
+    b_pps_rank_1.load(in, &b_pps);
+    b_pps_select_1.load(in, &b_pps);
     w_wt.load(in);
     b_p.load(in);
     rank_b_p.load(in, &b_p);

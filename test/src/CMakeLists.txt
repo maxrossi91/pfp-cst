@@ -40,6 +40,9 @@ target_link_libraries(lce_test common strdup pfp gsacak sdsl divsufsort divsufso
 add_executable(sa_test sa_test.cpp)
 target_link_libraries(sa_test common strdup pfp gsacak sdsl divsufsort divsufsort64 malloc_count gtest_main pthread)
 
+add_executable(pfp_cst_test pfp_cst_test.cpp)
+target_link_libraries(pfp_cst_test common pfp gsacak sdsl divsufsort divsufsort64 malloc_count gtest_main pthread)
+
 add_executable(pfp_test pfp_test.cpp)
 target_link_libraries(pfp_test common pfp gsacak sdsl divsufsort divsufsort64 malloc_count gtest_main pthread)
 

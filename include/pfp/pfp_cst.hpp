@@ -31,20 +31,50 @@
 #include <sdsl/int_vector.hpp>
 
 #include<pfp.hpp>
+#include<lce_support.hpp>
+#include<sa_support.hpp>
 
 template<class wt_t = pfp_wt_custom>
 class pfp_cst{
 protected:
-  pfp_lce_support<wt_t> lce;
-  pfp_sa_support<wt_t> sa;
-public : pf_parsing<wt_t> &pfp;
+  pfp_lce_support<wt_t> _lce;
+  pfp_sa_support<wt_t> _sa;
+
+  void copy(const cst_pfp& other)
+  {
+    pfp = other.pfp;
+    _lce = other._lce;
+    _sa = other._sa;
+  }
+
+public : 
+
+  pf_parsing<wt_t> &pfp;
+
+  // Empty Ctr
+  pfp_cst()
+  {
+  }
+
+  // Copy Ctr
+  pfp_cst(const pfp_cst &other)
+  {
+    copy(other);
+  }
+
+  // Move Ctr
+  pfp_cst(pfp_cst &&sd)
+  {
+    *this = std::move(sd);
+  }
 
   // This has to be changed using pfp_dictionary and pfp_parse
   pfp_cst(pf_parsing<wt_t>& pfp_):
                     pfp(pfp_),
-                    lce(pfp_),
-                    sa(pfp_)
+                    _lce(pfp_),
+                    _sa(pfp_)
   { }
+
 
   // A node is represented as an interval of the Suffix Array of the text
   // Left and right boundaries are inclusive
@@ -58,18 +88,17 @@ public : pf_parsing<wt_t> &pfp;
     }
   } node_t;
 
-
   // The root of the suffix tree
   inline node_t root()
   {
-    return {0, pfp.n−1};
+    return {0,pfp.n-1};
   }
 
   // The suffix position i if v is the leaf of suffix S[i..n]
   inline size_t locate(node_t vl)
   {
     assert(vl.is_leaf());
-    return sa.sa(vl.l);
+    return sa(vl.l);
   }
 
   // True iff v is an ancestor of w
@@ -81,7 +110,7 @@ public : pf_parsing<wt_t> &pfp;
   // The length of s(v).
   inline size_t s_depth(node_t v)
   {
-    return lce.lce(sa.sa(v.l), sa.sa(v.r));
+    return lce(sa(v.l), sa(v.r));
   }
 
   // The number of leaves in the subtree rooted atv.
@@ -165,7 +194,12 @@ public : pf_parsing<wt_t> &pfp;
   inline node_t wlink(node_t v, uint8_t a)
   {
     // WLink(v, a).This is a backward step on the BWT, already supported by Boucher et al. [5].
-
+    // TODO:
+    // Otherwise, we can consider storing a sampled BWT of the dictionary.
+    // Considering it as a kind of run length encoded BWT of lengths the phrase's frequencies, such that we can do rank and select.
+    // To perform the backward step with a character a, we compute the rank of a until the position before the beginning of a block of equals suffix phrases.
+    // We can then find the set of phrases preceded by an a, by using the LCS values of the colex sorted phrases(i.e.the lex sorted reversed phrases).
+    // Those should be in the same colex interval. We can use the wavelet tree W to compute how many of them occurs before the position we want to query.
   }
 
   // The lowest common ancestor of v and w.
@@ -181,7 +215,7 @@ public : pf_parsing<wt_t> &pfp;
     if(w.l < v.l)
       std::swap(v,w);
 
-    const auto h = std::min(v.l+1, w.r)
+    const auto h = std::min(v.l+1, w.r);
     const auto p = prev(v.l,h);
     const auto n = next(v.r,h);
     if(p.first and n.first)
@@ -207,7 +241,7 @@ public : pf_parsing<wt_t> &pfp;
   inline uint8_t letter(node_t v, size_t i)
   {
     // Letter(v, i).Compute p= SA[vl] +i−1 and return S[p]
-    const auto p = sa.sa(v.l) + i - 1;
+    const auto p = sa(v.l) + i - 1;
     return char_at(p);
   }
 
@@ -220,7 +254,7 @@ public : pf_parsing<wt_t> &pfp;
       return {p.second, n.second - 1};
   }
 
-protected:
+// protected:
 
   // Return the largest i'<i such that LCP[i'] < h.
   inline std::pair<bool, size_t> prev(size_t i, size_t h)
@@ -239,7 +273,7 @@ protected:
       {
         // This is a hack before implementing the prev_range operation on W.
         const auto tmp = pfp.w_wt.range_count(m.left, m.right, k1.second + 1); // Check +1
-        it(tmp.first > 0)
+        if(tmp.first > 0)
         {
           const auto j1 = pfp.w_wt.range_select(m.left, m.right, tmp.first);
           if(j1.first > 0)
@@ -278,7 +312,7 @@ protected:
       {
         // This is a hack before implementing the prev_range operation on W.
         const auto tmp = pfp.w_wt.range_count(m.left, m.right, k1.second + 1); // Check +1
-        it(tmp.first > 0)
+        if(tmp.first > 0)
         {
           const auto j1 = pfp.w_wt.range_select(m.left, m.right, tmp.first + 1);
           if(j1.first > 0)
@@ -300,9 +334,19 @@ protected:
     
   }
 
+  inline size_t sa(size_t i)
+  {
+    return _sa.sa(i);
+  }
+
+  inline size_t lce(size_t i, size_t j)
+  {
+    return _lce.lce(i,j);
+  }
+
   inline size_t lcp(size_t i)
   {
-    return lce.lce(sa.sa(i), sa.sa(i + 1));
+    return lce(sa(i), sa(i + 1));
   }
 
   // ψ(p) = ISA[SA[p] + 1 modn]
@@ -321,9 +365,9 @@ protected:
   inline size_t isa(size_t i)
   {
     // This is because, the text is considered to be cyclic.
-    i = (i + pfp.w) % n;
+    i = (i + pfp.w) % pfp.n;
 
-    assert(i < n);
+    assert(i < pfp.n);
 
     size_t phrase_idx = pfp.rank_b_p(i + 1) - 1;
     size_t phrase_id = pfp.pars.p[phrase_idx];
@@ -332,16 +376,26 @@ protected:
 
     size_t i_in_d = pfp.select_b_d(phrase_id) + offset;
 
-    size_t r = pfp.dict.isaD[i_in_d];
+    size_t i_in_saD = pfp.dict.isaD[i_in_d];
+    size_t r = pfp.b_pps_rank_1(i_in_saD + 1); // #1s in b_pps[1..i_in_saD]
+
+    size_t k = pfp.pars.isaP[phrase_idx + 1];
+
+    const auto& m = pfp.M[r];
+
+    size_t j = pfp.w.range_count(m.left, m.right, k);
+
+    return j + pfp.b_bwt_select_1(r);
+
   }
 
   // //!< 0-based position
   inline uint8_t char_at(size_t i) const
   {
     // This is because, the text is considered to be cyclic.
-    i = (i + pfp.w) % n;
+    i = (i + pfp.w) % pfp.n;
 
-    assert(i < n);
+    assert(i < pfp.n);
 
     size_t phrase_idx = pfp.rank_b_p(i + 1) - 1;
     size_t phrase_id = pfp.pars.p[phrase_idx];
@@ -350,6 +404,38 @@ protected:
 
     size_t i_in_d = pfp.select_b_d(phrase_id) + offset;
     return pfp.dict.d[i_in_d];
+  }
+
+  //! Swap method
+  friend void swap(pfp_cst &lhs, pfp_cst &rhs)
+  {
+    using std::swap;
+    std::swap(lhs.pfp, rhs.pfp);
+    std::swap(lhs._lce, rhs._lce);
+    std::swap(lhs._sa, rhs._sa);
+  }
+
+  // Assign operator
+  pfp_cst &operator=(const pfp_cst &other)
+  {
+    if (this != &other)
+    {
+      pfp_cst temp(other);
+      swap(*this, temp);
+    }
+    return *this;
+  }
+
+  // Move operator
+  pfp_cst &operator=(pfp_cst &&other)
+  {
+    if (this != &other)
+    {
+      pfp = other.pfp;
+      _lce = std::move(other._lce);
+      _sa = std::move(other._sa);
+    }
+    return *this;
   }
 };
 
