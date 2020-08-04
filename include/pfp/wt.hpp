@@ -597,7 +597,7 @@ public:
     sdsl::load(translate, in);
   }
 
-private:
+// private:
   sdsl::wt_int<> wt_i;
   std::vector<uint32_t> i_translate;
   std::vector<uint32_t> translate;
