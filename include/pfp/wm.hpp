@@ -97,7 +97,7 @@ public:
       return make_pair(0, point_type());
     size_type cnt_answers = 0;
     point_type point_vec;
-    if (1 < i)
+    if (0 < i)
     {
       std::vector<size_type> is(this->m_max_level + 1);
       std::vector<size_type> rank_off(this->m_max_level + 1);
@@ -106,6 +106,159 @@ public:
     }
     return make_pair(cnt_answers, point_vec);
   }
+
+  // // Helper function
+  // void
+  // _prev(node_type v, range_type r, value_type h,
+  //      std::vector<size_type> &is, std::vector<size_type> &rank_off, 
+  //      point_type &point_vec, size_type &cnt_answers, bool cmp)
+  // {
+  //   using std::get;
+  //   if (get<0>(r) > get<1>(r))
+  //     return;
+
+  //   if (v.level == this->m_max_level)
+  //   {
+  //     // for (size_type j = 1; j <= sdsl::size(r); ++j)
+  //     // {
+  //     //   size_type i = j;
+  //     //   size_type c = v.sym;
+  //     //   for (uint32_t k = this->m_max_level; k > 0; --k)
+  //     //   {
+  //     //     size_type offset = is[k - 1];
+  //     //     size_type rank_offset = rank_off[k - 1];
+  //     //     if (c & 1)
+  //     //     {
+  //     //       i = this->m_tree_select1(rank_offset + i) - offset + 1;
+  //     //     }
+  //     //     else
+  //     //     {
+  //     //       i = this->m_tree_select0(offset - rank_offset + i) - offset + 1;
+  //     //     }
+  //     //     c >>= 1;
+  //     //   }
+  //       point_vec = {get<1>(r), v.sym};
+  //     // }
+  //     cnt_answers = 1;
+  //     return;
+  //   }
+
+  //   const size_t n_ones_offset = this->m_tree_rank(v.offset);
+  //   const size_t n_zeros_offset = v.offset - n_ones_offset;
+
+
+  //   size_type ic = v.offset + get<1>(r);
+  //   value_type c = this->m_tree[ic];
+    
+  //   auto r1 = r;
+
+  //   if (cmp)
+  //   { // We have to compare against h
+  //     uint64_t mask = 1ULL << (this->max_level - v.level - 1);
+
+
+  //     if((h&mask) == 0)
+  //     {
+  //       // if(c!=0)
+  //       // {
+  //       //   // Find the first 0 before c.
+  //       //   size_t n_zeros = ic - this->m_tree_rank(ic);
+  //       //   if(n_zeros < 1)
+  //       //     return; // there are no characters smaller than h
+
+  //       //   size_t pos = this->m_tree_select0(n_zeros) - v.offset;
+  //       //   if(n_zeros < n_zeros_offset or pos < get<0>(r1))
+  //       //     return; // The interval is of charater larger than h
+  //       //   get<1>(r1) =  pos;
+  //       //   c = 0;
+  //       //   ic = v.offset + pos; // Update ic
+  //       // }
+  //       // // // Find the length of run of 0s before c.
+  //       // // size_t n_ones = this->m_tree_rank(ic);
+  //       // // size_t pos = 0;
+  //       // // if(n_ones > n_ones_offset) // If no the first 0 is at the beginning
+  //       // //   pos = this->m_tree_select1(n_ones) + 1 - v.offset;
+
+  //       // // // get<0>(r1) = std::max(get<0>(r1), pos);
+  //       // // maxr(get<0>(r1), pos);
+  //     }
+  //     else
+  //     {
+  //       if(c!=0)
+  //       {
+  //         // Find the length of run of 1s before c.
+  //         size_t n_zeros = ic - this->m_tree_rank(ic);
+  //         size_t pos = 0;
+  //         if(n_zeros > n_zeros_offset) // If no the first 1 is at the beginning
+  //           pos = this->m_tree_select0(n_zeros) + 1 - v.offset;
+
+  //         // get<0>(r1) = std::max(get<0>(r1), pos);
+  //         maxr(get<0>(r1), pos);
+  //       }
+  //       else
+  //       {
+  //         // The range is the position of c.
+  //         get<0>(r1) = get<1>(r1);
+  //         cmp = false;
+
+  //         point_vec = {get<1>(r1), v.sym};
+  //         cnt_answers = 1;
+  //         return;
+  //       }
+        
+  //     }
+  //   }
+
+  //   size_type offset = v.offset + get<0>(r1);
+  //   size_type rank_offset = this->m_tree_rank(offset);
+
+  //   // Expand the node and the range in the nodes.
+  //   auto c_v = this->expand(v); // get the children of the current node
+  //   auto c_r1 = this->expand(v, r1); // get the range in the children of the node v
+
+  //   if (!sdsl::empty(get<1>(c_r1)) and (c != 0))
+  //   {
+  //     _prev(get<1>(c_v), get<1>(c_r1), h,
+  //           is, rank_off,
+  //           point_vec, cnt_answers, cmp);
+  //     if(cnt_answers == 0)
+  //     { // If there is nothing on the right it is the rightmost on the left.
+  //       if (get<0>(r1) > get<0>(r))
+  //       {
+  //         get<0>(r1) = get<0>(r1) - 1; // The rightmost 0
+  //         get<1>(r1) = get<0>(r1); // The rightmost 0
+  //         c_r1 = this->expand(v, r1); // get the range in the children of the node v
+  //         cmp = 0;
+
+  //         point_vec = {get<1>(r1), v.sym};
+  //         cnt_answers = 1;
+  //         return;
+
+  //       }
+  //       else
+  //         return;
+  //     }
+  //     else
+  //     {
+  //       size_t i = point_vec.first;// + get<0>(get<1>(c_r1));
+  //       i = this->m_tree_select1(rank_offset + i) - offset + 1;
+  //       point_vec.first = i;
+  //     }
+      
+  //   }
+  //   else if (!sdsl::empty(get<0>(c_r1)))
+  //   {
+  //     _prev(get<0>(c_v), get<0>(c_r1), h,
+  //           is, rank_off,
+  //           point_vec, cnt_answers, cmp);
+  //     if(cnt_answers>0)
+  //     {
+  //       size_t i = point_vec.first;// + get<0>(get<0>(c_r1));
+  //       i = this->m_tree_select0(offset - rank_offset + i) - offset + 1;
+  //       point_vec.first = i;
+  //     }
+  //   }
+  // }
 
   // Helper function
   void
@@ -116,13 +269,14 @@ public:
     using std::get;
     if (get<0>(r) > get<1>(r))
       return;
-    is[v.level] = v.offset + get<0>(r);
+
+    is[v.level] = v.offset;// + get<0>(r);
 
     if (v.level == this->m_max_level)
     {
-      for (size_type j = 1; j <= sdsl::size(r); ++j)
-      {
-        size_type i = j;
+      // for (size_type j = get<0>(r) + 1; j <= get<1>(r) + 1; ++j)
+      // {
+        size_type i = get<1>(r) + 1;
         size_type c = v.sym;
         for (uint32_t k = this->m_max_level; k > 0; --k)
         {
@@ -139,14 +293,17 @@ public:
           c >>= 1;
         }
         point_vec = {is[0] + i - 1, v.sym};
-      }
-      cnt_answers += sdsl::size(r);
+      // }
+      cnt_answers = 1;
       return;
     }
     else
     {
       rank_off[v.level] = this->m_tree_rank(is[v.level]);
     }
+
+    const size_t n_ones_offset = this->m_tree_rank(v.offset);
+    const size_t n_zeros_offset = v.offset - n_ones_offset;
 
     size_type ic = v.offset + get<1>(r);
     value_type c = this->m_tree[ic];
@@ -168,20 +325,20 @@ public:
             return; // there are no characters smaller than h
 
           size_t pos = this->m_tree_select0(n_zeros) - v.offset;
-          if(pos < get<0>(r1))
+          if(n_zeros < n_zeros_offset or pos < get<0>(r1))
             return; // The interval is of charater larger than h
           get<1>(r1) =  pos;
           c = 0;
           ic = v.offset + pos; // Update ic
         }
-        // Find the length of run of 0s before c.
-        size_t n_ones = this->m_tree_rank(ic);
-        size_t pos = 0;
-        if(n_ones > 0) // If no the first 0 is at the beginning
-          pos = this->m_tree_select1(n_ones) + 1 - v.offset;
+        // // Find the length of run of 0s before c.
+        // size_t n_ones = this->m_tree_rank(ic);
+        // size_t pos = 0;
+        // if(n_ones > n_ones_offset) // If no the first 0 is at the beginning
+        //   pos = this->m_tree_select1(n_ones) + 1 - v.offset;
 
-        // get<0>(r1) = std::max(get<0>(r1), pos);
-        maxr(get<0>(r1), pos);
+        // // get<0>(r1) = std::max(get<0>(r1), pos);
+        // maxr(get<0>(r1), pos);
       }
       else
       {
@@ -190,17 +347,23 @@ public:
           // Find the length of run of 1s before c.
           size_t n_zeros = ic - this->m_tree_rank(ic);
           size_t pos = 0;
-          if(n_zeros > 0) // If no the first 1 is at the beginning
+          if(n_zeros > n_zeros_offset) // If no the first 1 is at the beginning
             pos = this->m_tree_select0(n_zeros) + 1 - v.offset;
 
           // get<0>(r1) = std::max(get<0>(r1), pos);
           maxr(get<0>(r1), pos);
+
+          // is[v.level] = v.offset + get<0>(r1);
+          // rank_off[v.level] = this->m_tree_rank(is[v.level]);
         }
         else
         {
           // The range is the position of c.
           get<0>(r1) = get<1>(r1);
           cmp = false;
+
+          // is[v.level] = v.offset + get<0>(r1);
+          // rank_off[v.level] = this->m_tree_rank(is[v.level]);
         }
         
       }
@@ -223,6 +386,9 @@ public:
           get<1>(r1) = get<0>(r1); // The rightmost 0
           c_r1 = this->expand(v, r1); // get the range in the children of the node v
           cmp = 0;
+
+          // is[v.level] = v.offset + get<0>(r1);
+          // rank_off[v.level] = this->m_tree_rank(is[v.level]);
         }
         else
           return;
@@ -270,37 +436,38 @@ public:
     using std::get;
     if (get<0>(r) > get<1>(r))
       return;
-    is[v.level] = v.offset + get<0>(r);
+    is[v.level] = v.offset;// + get<0>(r);
 
     if (v.level == this->m_max_level)
     {
-      for (size_type j = 1; j <= sdsl::size(r); ++j)
+      size_type i = get<0>(r) + 1;
+      size_type c = v.sym;
+      for (uint32_t k = this->m_max_level; k > 0; --k)
       {
-        size_type i = j;
-        size_type c = v.sym;
-        for (uint32_t k = this->m_max_level; k > 0; --k)
+        size_type offset = is[k - 1];
+        size_type rank_offset = rank_off[k - 1];
+        if (c & 1)
         {
-          size_type offset = is[k - 1];
-          size_type rank_offset = rank_off[k - 1];
-          if (c & 1)
-          {
-            i = this->m_tree_select1(rank_offset + i) - offset + 1;
-          }
-          else
-          {
-            i = this->m_tree_select0(offset - rank_offset + i) - offset + 1;
-          }
-          c >>= 1;
+          i = this->m_tree_select1(rank_offset + i) - offset + 1;
         }
-        point_vec = {is[0] + i - 1, v.sym};
+        else
+        {
+          i = this->m_tree_select0(offset - rank_offset + i) - offset + 1;
+        }
+        c >>= 1;
       }
-      cnt_answers += sdsl::size(r);
+      point_vec = {is[0] + i - 1, v.sym};
+      
+      cnt_answers = 1;
       return;
     }
     else
     {
       rank_off[v.level] = this->m_tree_rank(is[v.level]);
     }
+
+    const size_t n_ones_offset = this->m_rank_level[v.level];
+    const size_t n_zeros_offset = v.offset + this->m_size - n_ones_offset;
 
     size_type ic = v.offset + get<0>(r);
     value_type c = this->m_tree[ic];
@@ -324,22 +491,22 @@ public:
             return;                                                             // there are no characters smaller than h
 
           size_t pos = this->m_tree_select0(n_zeros + 1) - v.offset;
-          if (pos > get<1>(r1))
+          if (n_zeros > n_zeros_offset or pos > get<1>(r1))
             return; // The interval is of charater larger than h
           get<0>(r1) = pos;
           c = 0;
           ic = v.offset + pos; // Update ic
         }
 
-        // Find the length of run of 0s after c.
-        size_t n_ones = this->m_tree_rank(ic);
-        size_t n_ones_level = this->m_size - this->m_zero_cnt[v.level];
+        // // Find the length of run of 0s after c.
+        // size_t n_ones = this->m_tree_rank(ic);
+        // size_t n_ones_level = this->m_size - this->m_zero_cnt[v.level];
 
-        size_t pos = this->m_size - 1;
-        if (n_ones < n_ones_level) // If no the first 1 is at the beginning
-          pos = this->m_tree_select1(n_ones + 1) - 1 - v.offset;
+        // size_t pos = this->m_size - 1;
+        // if (n_ones < n_ones_level) // If no the first 1 is at the beginning
+        //   pos = this->m_tree_select1(n_ones + 1) - 1 - v.offset;
 
-        get<1>(r1) = std::min(get<1>(r1), pos);
+        // get<1>(r1) = std::min(get<1>(r1), pos);
 
       }
       else
@@ -348,9 +515,9 @@ public:
         {
           // Find the length of the run of 0s after c.
           size_t n_zeros = ic - this->m_tree_rank(ic);
-          size_t total_n_zeros = this->m_tree.size() - this->m_tree_rank(this->m_tree.size());
+          // size_t total_n_zeros = this->m_tree.size() - this->m_tree_rank(this->m_tree.size());
           size_t pos = this->m_size - 1;
-          if (n_zeros < total_n_zeros) // If no the last 1 is at the end
+          if (n_zeros < n_zeros_offset) // If no the last 1 is at the end
             pos = this->m_tree_select0(n_zeros + 1) - 1 - v.offset;
 
           get<1>(r1) = std::min(get<1>(r1), pos);
@@ -642,5 +809,15 @@ public:
   //                      vrb, mid, is, rank_off, point_right, cnt_right);
   //   }
   // }
+
+  void print()
+  {
+    for(size_t i = 0; i < this->m_tree.size(); ++i)
+    {
+      if(i%this->m_size == 0) std::cout << std::endl;
+      std::cout << this->m_tree[i] << " ";
+    }
+    std::cout << std::endl << std::flush;
+  }
 };
 #endif /* end of include guard: _PFP_WM_HH */

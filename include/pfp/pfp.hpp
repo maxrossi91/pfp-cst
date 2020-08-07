@@ -77,6 +77,8 @@ public:
   wm_t<> s_lcp_T; // LCP array of T sampled in corrispondence of the beginning of each phrase.
   sdsl::rmq_succinct_sct<> rmq_s_lcp_T;
 
+  wm_t<> lcp_M; // LCP of the unique reverse of the phrases
+
   typedef size_t size_type;
 
   // Default constructor for load
@@ -193,6 +195,7 @@ public:
     //   b_bwt[i] = false; // bug in resize
     std::vector<size_t> onset;
     std::vector<size_t> onset_b_pps;
+    std::vector<int_t> lcp_M_;
 
     assert(dict.d[dict.saD[0]] == EndOfDict);
     size_t i = 1; // This should be safe since the first entry of sa is always the dollarsign used to compute the sa
@@ -248,9 +251,54 @@ public:
         m.left = dict.colex_daD[dict.rmq_colex_daD(left, right)];
         m.right = dict.colex_daD[dict.rMq_colex_daD(left, right)];
 
+        // Computing LCP M
+        if(M.empty())
+          lcp_M_.push_back(0);
+        else
+        {
+            // const auto& m_ = M.back();
+            // if ((m_.left <= m.right && m.right <= m_.right) or
+            //     (m_.left <= m.left && m.left <= m_.right) or 
+            //     (m.left <= m_.right && m_.right <= m.right) or
+            //     (m.left <= m_.left && m_.left <= m.right))
+            //   // The two suffixes are suffixes of the same phrase
+            //   lcp_M_.push_back(std::min(m.len, m_.len)); 
+            // else
+            // {
+            //   size_t left, right;
+            //   if(m.right != m_.right)
+            //   {
+            //     left = std::min(m.right, m_.right)+1;
+            //     right = max(m.right, m_.right);
+            //   }
+            //   else
+            //   {
+            //     assert(m.right != m_.left);
+            //     left = std::min(m.right, m_.left)+1;
+            //     right = max(m.right, m_.left);
+            //   }
+              const size_t left = onset_b_pps[onset_b_pps.size()-2] +1;
+              const size_t right = onset_b_pps[onset_b_pps.size()-1];
+              const size_t idx = dict.rmq_lcp_D(left,right);
+              lcp_M_.push_back(dict.lcpD[idx]);
+              // const size_t idx = dict.rmq_lcps(left,right);
+              // lcp_M_.push_back(dict.lcps[idx]);
+            // }
+        }
+
+
         M.push_back(m);
       }
     }
+
+    sdsl::int_vector<> lcp_M__(lcp_M_.size());
+    for(size_t i = 0; i < lcp_M_.size(); ++i)
+      lcp_M__[i] = lcp_M_[i];
+
+    lcp_M_.clear();
+
+    sdsl::construct_im(lcp_M,lcp_M__);
+    lcp_M_.resize(0);
 
     sdsl::sd_vector_builder builder(n,onset.size());
     for(auto idx: onset)
@@ -260,8 +308,8 @@ public:
     b_bwt_rank_1 = typename bv_t::rank_1_type(&b_bwt);
     b_bwt_select_1 = typename bv_t::select_1_type(&b_bwt);
 
-    sdsl::sd_vector_builder builder_b_pps(n,onset.size());
-    for(auto idx: onset)
+    sdsl::sd_vector_builder builder_b_pps(dict.saD.size(),onset_b_pps.size());
+    for (auto idx : onset_b_pps)
       builder_b_pps.set(idx);
     b_pps = bv_t(builder_b_pps);
     // rank & select support for b_pps

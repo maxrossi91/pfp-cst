@@ -37,29 +37,21 @@
 template<class wt_t = pfp_wt_custom>
 class pfp_cst{
 protected:
+
   pfp_lce_support<wt_t> _lce;
   pfp_sa_support<wt_t> _sa;
-
-  void copy(const cst_pfp& other)
-  {
-    pfp = other.pfp;
-    _lce = other._lce;
-    _sa = other._sa;
-  }
 
 public : 
 
   pf_parsing<wt_t> &pfp;
 
-  // Empty Ctr
-  pfp_cst()
-  {
-  }
-
   // Copy Ctr
-  pfp_cst(const pfp_cst &other)
+  pfp_cst(const pfp_cst &other) : 
+                      pfp(other.pfp),
+                      _lce(pfp),
+                      _sa(pfp)
   {
-    copy(other);
+
   }
 
   // Move Ctr
@@ -136,6 +128,8 @@ public :
   // The alphabetically first child of v. 
   inline node_t f_child(node_t v)
   {
+    if(v.is_leaf())
+      return root();
     // FChild(v).Return[vl, Next(vl, SDepth(v) + 1)−1].
     const auto n = next(v.l, s_depth(v) + 1);
     if(n.first)
@@ -260,24 +254,30 @@ public :
   inline std::pair<bool, size_t> prev(size_t i, size_t h)
   {
     // i + 1 -> rank is for (0 ... i - 1) interval
-    const auto r = pfp.b_bwt_rank_1(i + 1) - 1;
+    auto r = pfp.b_bwt_rank_1(i + 1) - 1;
     const auto j = i - pfp.b_bwt_select_1(r + 1); // lex rank - 0-based
     const auto &m = pfp.M[r];
 
     if(m.len < h)
     {
-      size_t h1 = h - m.len;
-      const size_t k = pfp.pars.isaP[pfp.b_p_rank1(pfp.pars.saP[i]+1)+1];
-      const auto k1 = pfp.s_lcp_T.prev(k+1,h1); // k+1 because prev looks for positions smaller than k.
+      size_t h1 = h - m.len + pfp.w;
+
+      const auto k = pfp.w_wt.range_select(m.left, m.right, j + 1) + 1; // k+1 because w_wt is built without the first 0
+
+      const auto k1 = pfp.s_lcp_T.prev(k,h1);
       if(k1.first > 0)
       {
         // This is a hack before implementing the prev_range operation on W.
-        const auto tmp = pfp.w_wt.range_count(m.left, m.right, k1.second + 1); // Check +1
-        if(tmp.first > 0)
+        size_t cnt = pfp.w_wt.range_count(m.left, m.right, k1.second.first); // There is no +1 because w_t is built without the first 0
+        size_t cnt1 = pfp.w_wt.range_count(m.left, m.right, k1.second.first-1); // There is no +1 because w_t is built without the first 0
+        if(cnt > 0)
         {
-          const auto j1 = pfp.w_wt.range_select(m.left, m.right, tmp.first);
-          if(j1.first > 0)
-            return (i-j+j1.second);         
+          // const auto j1 = pfp.w_wt.range_select(m.left, m.right, cnt);
+          size_t j1;
+          if(cnt != cnt1) j1 = cnt - 1;
+          else j1 = std::min(cnt+1,j) - 1;
+          // const auto j1 = cnt - 1;
+          return {true,(i-j+j1)};         
         }
       }
     }
@@ -286,10 +286,10 @@ public :
     // We find the largest row r'<= r (r'<r if j=0) with a point in columen less than h
     if (j > 0)
       r++;
-    auto r1 = pfp.dict.lcps.prev(r, h);
+    auto r1 = pfp.lcp_M.prev(r, h);
     if (r1.first > 0)
       // The answer is the first entry of the block r'
-      return {true, pfp.b_bwt_select_1(r1)};
+      return {true, pfp.b_bwt_select_1(r1.second.first + 1)};
     else
       return {false, 0};
     
@@ -299,36 +299,50 @@ public :
   inline std::pair<bool, size_t> next(size_t i, size_t h)
   {
     // i + 1 -> rank is for (0 ... i - 1) interval
-    const auto r = pfp.b_bwt_rank_1(i + 1) - 1;
+    auto r = pfp.b_bwt_rank_1(i + 1) - 1;
     const auto j = i - pfp.b_bwt_select_1(r + 1); // lex rank - 0-based
     const auto &m = pfp.M[r];
 
+
     if(m.len < h)
     {
-      size_t h1 = h - m.len;
-      const size_t k = pfp.pars.isaP[pfp.b_p_rank1(pfp.pars.saP[i]+1)+1];
-      const auto k1 = pfp.s_lcp_T.next(k+1,h1); // k+1 because prev looks for positions smaller than k.
+      size_t h1 = h - m.len + pfp.w;
+      const auto s = pfp.b_bwt_select_1(r + 2) - pfp.b_bwt_select_1(r + 1) - 1; // # equal suffix
+
+      const auto k = pfp.w_wt.range_select(m.left, m.right, j + 1) + 1; // k+1 because w_wt is built without the first 0
+
+      const auto k1 = pfp.s_lcp_T.next(k,h1); 
       if(k1.first > 0)
       {
         // This is a hack before implementing the prev_range operation on W.
-        const auto tmp = pfp.w_wt.range_count(m.left, m.right, k1.second + 1); // Check +1
-        if(tmp.first > 0)
+        const auto cnt = pfp.w_wt.range_count(m.left, m.right, k1.second.first - 1); // Check +1
+        if(cnt <= s)
         {
-          const auto j1 = pfp.w_wt.range_select(m.left, m.right, tmp.first + 1);
-          if(j1.first > 0)
-            return (i-j+j1.second);         
+          size_t j1 = cnt;
+          return {true,(i-j+j1)};         
         }
+        // const auto cnt = pfp.w_wt.range_count(m.left, m.right, k1.second.first); // Check +1
+        // const auto cnt1 = pfp.w_wt.range_count(m.left, m.right, k1.second.first - 1); // Check +1
+        // if(cnt <= s)
+        // {
+        //   size_t j1;
+        //   if (cnt != cnt1) j1 = cnt - 1;
+        //   else j1 = max(cnt - 1, j + 1) - 1;
+        //   return {true,(i-j+j1)};         
+        // }
       }
     }
 
-    
-    // We find the largest row r'<= r (r'<r if j=0) with a point in column less than h
-    if (j == 0)
-      r--;
-    auto r1 = pfp.dict.lcps.next(r, h);
+    // This is not necessary in Next sinc the lcp in k refers to the left
+    // // We find the largest row r'<= r (r'<r if j=0) with a point in column less than h
+    // if (j < s)
+    //   r--;
+    auto r1 = pfp.lcp_M.next(r, h); // r+1 is to simulate the right LCP
     if (r1.first > 0)
+    {
       // The answer is the first entry of the block r'
-      return {true, pfp.b_bwt_select_1(r1)};
+      return {true, pfp.b_bwt_select_1(r1.second.first + 1)};
+    }
     else
       return {false, 0};
     
@@ -346,7 +360,8 @@ public :
 
   inline size_t lcp(size_t i)
   {
-    return lce(sa(i), sa(i + 1));
+    if(i==0) return 0;
+    return lce(sa(i-1), sa(i));
   }
 
   // ψ(p) = ISA[SA[p] + 1 modn]
@@ -369,21 +384,37 @@ public :
 
     assert(i < pfp.n);
 
-    size_t phrase_idx = pfp.rank_b_p(i + 1) - 1;
+    // size_t phrase_idx = pfp.rank_b_p(i + 1) - 1;
+    size_t phrase_idx = pfp.pars.p.size()-2; // the last phrase of the parse
+    if(i > 0)
+      phrase_idx = pfp.rank_b_p(i) - 1; // This consider the first character of the phrase as the last of the previous one.
+    else
+      phrase_idx = 0;//i = pfp.n - pfp.w; // The first character of the first phrase of the dictionary is in the last phrase.
+
     size_t phrase_id = pfp.pars.p[phrase_idx];
     assert(i >= pfp.select_b_p(phrase_idx + 1));
     size_t offset = i - pfp.select_b_p(phrase_idx + 1);
 
-    size_t i_in_d = pfp.select_b_d(phrase_id) + offset;
+    size_t i_in_d = pfp.dict.select_b_d(phrase_id) + offset;
 
     size_t i_in_saD = pfp.dict.isaD[i_in_d];
-    size_t r = pfp.b_pps_rank_1(i_in_saD + 1); // #1s in b_pps[1..i_in_saD]
 
-    size_t k = pfp.pars.isaP[phrase_idx + 1];
+    assert(phrase_idx ==0 || pfp.dict.b_d[i_in_d] == 0);
+    assert(pfp.dict.length_of_phrase(phrase_id) - offset >= pfp.w);
 
-    const auto& m = pfp.M[r];
+    size_t r = pfp.b_pps_rank_1(i_in_saD + 1); // #1s in b_pps[1..i_in_saD] counting from 0
 
-    size_t j = pfp.w.range_count(m.left, m.right, k);
+    size_t k = pfp.pars.isaP[phrase_idx + 1]; // The phrase following the last phrase is the first phrase
+    if (phrase_idx + 1 >= pfp.pars.p.size()-1)
+      k = pfp.pars.isaP[0];
+    
+    assert(pfp.w_wt[k-1] == phrase_id);
+
+    const auto& m = pfp.M[r-1];
+
+    assert(phrase_idx == 0 || (m.left <= pfp.w_wt.translate[phrase_id - 1] and pfp.w_wt.translate[phrase_id - 1] <= m.right));
+
+    size_t j = pfp.w_wt.range_count(m.left, m.right, k) - 1;
 
     return j + pfp.b_bwt_select_1(r);
 
@@ -402,7 +433,7 @@ public :
     assert(i >= pfp.select_b_p(phrase_idx + 1));
     size_t offset = i - pfp.select_b_p(phrase_idx + 1);
 
-    size_t i_in_d = pfp.select_b_d(phrase_id) + offset;
+    size_t i_in_d = pfp.dict.select_b_d(phrase_id) + offset;
     return pfp.dict.d[i_in_d];
   }
 
@@ -426,17 +457,17 @@ public :
     return *this;
   }
 
-  // Move operator
-  pfp_cst &operator=(pfp_cst &&other)
-  {
-    if (this != &other)
-    {
-      pfp = other.pfp;
-      _lce = std::move(other._lce);
-      _sa = std::move(other._sa);
-    }
-    return *this;
-  }
+  // // Move operator
+  // pfp_cst &operator=(pfp_cst &&other)
+  // {
+  //   if (this != &other)
+  //   {
+  //     pfp = other.pfp;
+  //     _lce = std::move(other._lce);
+  //     _sa = std::move(other._sa);
+  //   }
+  //   return *this;
+  // }
 };
 
 #endif /* end of include guard: _PFP_CST_HH */
