@@ -76,7 +76,7 @@ int main(int argc, char const *argv[]) {
     //     std::cout << "f: " << i.first << " | s: " << i.second << std::endl;
     // }
 
-    std::vector<uint32_t> text{1, 2, 4, 2, 5, 3, 0};
+    std::vector<uint32_t> text{0, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 24, 23, 23, 22, 22, 23, 21, 21, 22};
 
     sdsl::int_vector<> sdsl_text(text.size());
 
@@ -104,29 +104,37 @@ int main(int argc, char const *argv[]) {
         std::cout << "f: " << i.first << " | s: " << i.second << std::endl;
     }
 
+    wm.print();
+
     // prev - test
-    auto prev = wm.prev(3,3);
+    auto prev = wm.prev(11,3);
 
-    std::cout << "wm.prev(3,3)" << std::endl;
+    std::cout << "wm.prev(11,3)" << std::endl;
     std::cout << "prev: " << prev.first << std::endl;
     std::cout << "f: " << prev.second.first << " | s: " << prev.second.second << std::endl;
     
-    prev = wm.prev(3,1);
+    prev = wm.prev(11,1);
 
-    std::cout << "wm.prev(3,1)" << std::endl;
+    std::cout << "wm.prev(11,1)" << std::endl;
     std::cout << "prev: " << prev.first << std::endl;
     std::cout << "f: " << prev.second.first << " | s: " << prev.second.second << std::endl;
-    // next - test
-    auto next = wm.next(3,4);
-
-    std::cout << "wm.next(3,4)" << std::endl;
-    std::cout << "next: " << next.first << std::endl;
-    std::cout << "f: " << next.second.first << " | s: " << next.second.second << std::endl;
     
-    next = wm.next(3,1);
+    prev = wm.prev(12,23);
 
-    std::cout << "wm.next(3,1)" << std::endl;
-    std::cout << "next: " << next.first << std::endl;
-    std::cout << "f: " << next.second.first << " | s: " << next.second.second << std::endl;
+    std::cout << "wm.prev(11,1)" << std::endl;
+    std::cout << "prev: " << prev.first << std::endl;
+    std::cout << "f: " << prev.second.first << " | s: " << prev.second.second << std::endl;
+    // // next - test
+    // auto next = wm.next(3,4);
+
+    // std::cout << "wm.next(3,4)" << std::endl;
+    // std::cout << "next: " << next.first << std::endl;
+    // std::cout << "f: " << next.second.first << " | s: " << next.second.second << std::endl;
+    
+    // next = wm.next(3,1);
+
+    // std::cout << "wm.next(3,1)" << std::endl;
+    // std::cout << "next: " << next.first << std::endl;
+    // std::cout << "f: " << next.second.first << " | s: " << next.second.second << std::endl;
 
 }

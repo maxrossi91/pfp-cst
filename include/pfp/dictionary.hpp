@@ -447,8 +447,8 @@ public:
     rmq_colex_daD.load(in);
     rMq_colex_daD.load(in);
     my_load(colex_id, in);
-    my_load(slcp,in);
-    rmq_slcp.load(in);
+    my_load(lcps,in);
+    rmq_lcps.load(in);
     // sdsl::load(d, in);
     // sdsl::load(saD, in);
     // sdsl::load(isaD, in);

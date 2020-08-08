@@ -102,6 +102,7 @@ public :
   // The length of s(v).
   inline size_t s_depth(node_t v)
   {
+    // if v is a leaf, this methid may return s_depth-1 wrt sdsl since we do not consider the chr terminator
     return lce(sa(v.l), sa(v.r));
   }
 
@@ -114,15 +115,18 @@ public :
   // The parent node of v.
   inline node_t parent(node_t v)
   {
-  // Parent(v). Computeh = max(LCP[vl], LCP[vr + 1]) and return [ Prev(vl + 1, h), Next(vr, h)−1 ].
-    size_t lcp_l;
-    size_t lcp_r;
+  // Parent(v). Compute h = max(LCP[vl], LCP[vr + 1]) and return [ Prev(vl + 1, h), Next(vr, h)−1 ].
+    const auto lcp_r = lcp(v.r + 1);
+    const auto lcp_l = lcp(v.l);
     size_t h = max(lcp_l, lcp_r);
-    const auto p = prev(v.l+1, h);
+    const auto p = prev(v.l + 1, h);
     const auto n = next(v.r, h);
-    
-    if(p.first and n.first)
-      return {p.second, n.second -1}; 
+
+    return {p.second, n.second - 1};
+    // if (p.first and n.first)
+    //   return {p.second, n.second - 1};
+    // else
+    //   return root();
   }
 
   // The alphabetically first child of v. 
@@ -139,17 +143,18 @@ public :
   // The alphabetically next sibling of v.
   inline node_t n_sibling(node_t v)
   {
+    if(v.r >= pfp.n-1)
+      return root();
     // NSibling(v).If LCP[vr + 1] < LCP[vl] then v is the last child; otherwise return[vr+1,Next(vr,LCP[vr+ 1] + 1)−1].
     const auto lcp_r = lcp(v.r + 1);
     const auto lcp_l = lcp(v.l);
 
     if(lcp_r < lcp_l)
-      return v;
+      return root();
     else
     {
-      const auto n = next(v.r, lcp_r + 1);
-      if(n.first)
-        return {v.r + 1, n.second - 1};
+      const auto n = next(v.r + 1, lcp_r + 1);
+      return {v.r + 1, n.second - 1};
     }
   }
 
@@ -159,13 +164,12 @@ public :
     // SLink(v).Compute x=ψ(vl) and y=ψ(vr), h=Min(x+ 1,y), and return[Prev(x+1,h),Next(y,h)−1]. Here ψ(p) = ISA[SA[p] + 1 modn].
     const auto x = psi(v.l);
     const auto y = psi(v.r);
-    const auto h = std::min(x+1,y);
+    const auto h = lce(sa(x), sa(y));
 
     const auto p = prev(x+1, h);
     const auto n = next(y,h);
 
-    if(p.first and n.first)
-      return {p.second, n.second -1};
+    return {p.second, n.second -1};
   }
 
   //The suffix link of v iterated i times. 
@@ -174,13 +178,12 @@ public :
     // Slinki(v).Same as above, using ψi(p) = ISA[SA[p] +i mod n] instead of ψ(p).
     const auto x = psi(v.l,i);
     const auto y = psi(v.r,i);
-    const auto h = std::min(x + 1, y);
+    const auto h = lce(sa(x), sa(y));
 
     const auto p = prev(x + 1, h);
     const auto n = next(y, h);
 
-    if (p.first and n.first)
-      return {p.second, n.second - 1};
+    return {p.second, n.second - 1};
   }
 
 
@@ -209,11 +212,12 @@ public :
     if(w.l < v.l)
       std::swap(v,w);
 
-    const auto h = std::min(v.l+1, w.r);
-    const auto p = prev(v.l,h);
-    const auto n = next(v.r,h);
-    if(p.first and n.first)
-      return {p.second, n.second - 1};
+    const auto h = lce(sa(v.l),sa(w.r));
+
+    const auto p = prev(v.l + 1,h);
+    const auto n = next(w.r,h);
+
+    return {p.second, n.second - 1};
   }
 
   // The node w s.t. the first letter on edge (v, w) is a. 
@@ -224,8 +228,8 @@ public :
     node_t w = f_child(v);
     while(letter(w, s_depth(v)+1) != a){
       node_t tmp = n_sibling(w);
-      if(tmp == w)
-        return v;
+      if(tmp.l == w.l and tmp.r == w.r)
+        return root();
       w = tmp;
     }
     return w;
@@ -242,10 +246,9 @@ public :
   // Level ancestor query, i.e., the highest ancestor w of v with \textsc{SDepth}(w) \ge d.
   inline node_t laq(node_t v, size_t d)
   {
-    const auto p = prev(v.l+1, d+1);
-    const auto n = next(v.r, d+1);
-    if (p.first and n.first)
-      return {p.second, n.second - 1};
+    const auto p = prev(v.l+1, d);
+    const auto n = next(v.r, d);
+    return {p.second, n.second - 1};
   }
 
 // protected:
@@ -253,6 +256,10 @@ public :
   // Return the largest i'<i such that LCP[i'] < h.
   inline std::pair<bool, size_t> prev(size_t i, size_t h)
   {
+    if( i == 0)
+      return {false,0};
+
+    i--; // I have to consider the lexicographic rank of the previous position
     // i + 1 -> rank is for (0 ... i - 1) interval
     auto r = pfp.b_bwt_rank_1(i + 1) - 1;
     const auto j = i - pfp.b_bwt_select_1(r + 1); // lex rank - 0-based
@@ -261,10 +268,11 @@ public :
     if(m.len < h)
     {
       size_t h1 = h - m.len + pfp.w;
+      // const auto s = pfp.b_bwt_select_1(r + 2) - pfp.b_bwt_select_1(r + 1) - 1; // # equal suffix
 
       const auto k = pfp.w_wt.range_select(m.left, m.right, j + 1) + 1; // k+1 because w_wt is built without the first 0
 
-      const auto k1 = pfp.s_lcp_T.prev(k,h1);
+      const auto k1 = pfp.s_lcp_T.prev(k + 1,h1); // k+1 because now k' <= k since i = i-1
       if(k1.first > 0)
       {
         // This is a hack before implementing the prev_range operation on W.
@@ -275,7 +283,7 @@ public :
           // const auto j1 = pfp.w_wt.range_select(m.left, m.right, cnt);
           size_t j1;
           if(cnt != cnt1) j1 = cnt - 1;
-          else j1 = std::min(cnt+1,j) - 1;
+          else j1 = std::min(cnt+1,j+1) - 1; // j+1 because now k' <= k since i = i-1
           // const auto j1 = cnt - 1;
           return {true,(i-j+j1)};         
         }
@@ -283,10 +291,8 @@ public :
     }
 
     
-    // We find the largest row r'<= r (r'<r if j=0) with a point in columen less than h
-    if (j > 0)
-      r++;
-    auto r1 = pfp.lcp_M.prev(r, h);
+
+    auto r1 = pfp.lcp_M.prev(r + 1, h);
     if (r1.first > 0)
       // The answer is the first entry of the block r'
       return {true, pfp.b_bwt_select_1(r1.second.first + 1)};
@@ -294,10 +300,56 @@ public :
       return {false, 0};
     
   }
+  // // Return the largest i'<i such that LCP[i'] < h.
+  // inline std::pair<bool, size_t> prev(size_t i, size_t h)
+  // {
+  //   // i + 1 -> rank is for (0 ... i - 1) interval
+  //   auto r = pfp.b_bwt_rank_1(i + 1) - 1;
+  //   const auto j = i - pfp.b_bwt_select_1(r + 1); // lex rank - 0-based
+  //   const auto &m = pfp.M[r];
+
+  //   if(m.len < h)
+  //   {
+  //     size_t h1 = h - m.len + pfp.w;
+
+  //     const auto k = pfp.w_wt.range_select(m.left, m.right, j + 1) + 1; // k+1 because w_wt is built without the first 0
+
+  //     const auto k1 = pfp.s_lcp_T.prev(k,h1);
+  //     if(k1.first > 0)
+  //     {
+  //       // This is a hack before implementing the prev_range operation on W.
+  //       size_t cnt = pfp.w_wt.range_count(m.left, m.right, k1.second.first); // There is no +1 because w_t is built without the first 0
+  //       size_t cnt1 = pfp.w_wt.range_count(m.left, m.right, k1.second.first-1); // There is no +1 because w_t is built without the first 0
+  //       if(cnt > 0)
+  //       {
+  //         // const auto j1 = pfp.w_wt.range_select(m.left, m.right, cnt);
+  //         size_t j1;
+  //         if(cnt != cnt1) j1 = cnt - 1;
+  //         else j1 = std::min(cnt+1,j) - 1;
+  //         // const auto j1 = cnt - 1;
+  //         return {true,(i-j+j1)};         
+  //       }
+  //     }
+  //     // return {true, pfp.b_bwt_select_1(r) + 1};
+  //   }
+
+    
+  //   // We find the largest row r'<= r (r'<r if j=0) with a point in columen less than h
+  //   if (j > 0)
+  //     r++;
+  //   auto r1 = pfp.lcp_M.prev(r, h);
+  //   if (r1.first > 0)
+  //     // The answer is the first entry of the block r'
+  //     return {true, pfp.b_bwt_select_1(r1.second.first + 1)};
+  //   else
+  //     return {false, 0};
+    
+  // }
 
   // Return the smallest i'>i such that LCP[i'] < h.
   inline std::pair<bool, size_t> next(size_t i, size_t h)
   {
+
     // i + 1 -> rank is for (0 ... i - 1) interval
     auto r = pfp.b_bwt_rank_1(i + 1) - 1;
     const auto j = i - pfp.b_bwt_select_1(r + 1); // lex rank - 0-based
@@ -308,10 +360,11 @@ public :
     {
       size_t h1 = h - m.len + pfp.w;
       const auto s = pfp.b_bwt_select_1(r + 2) - pfp.b_bwt_select_1(r + 1) - 1; // # equal suffix
+      // I have to take the jth point because the minnimum can be between the i-th and i+1-th corresponding k
 
       const auto k = pfp.w_wt.range_select(m.left, m.right, j + 1) + 1; // k+1 because w_wt is built without the first 0
 
-      const auto k1 = pfp.s_lcp_T.next(k,h1); 
+      const auto k1 = pfp.s_lcp_T.next(k,h1); // k - 1 because now k' >= k since i = i+1
       if(k1.first > 0)
       {
         // This is a hack before implementing the prev_range operation on W.
@@ -335,18 +388,69 @@ public :
 
     // This is not necessary in Next sinc the lcp in k refers to the left
     // // We find the largest row r'<= r (r'<r if j=0) with a point in column less than h
-    // if (j < s)
-    //   r--;
-    auto r1 = pfp.lcp_M.next(r, h); // r+1 is to simulate the right LCP
+    auto r1 = pfp.lcp_M.next(r, h);
     if (r1.first > 0)
     {
       // The answer is the first entry of the block r'
       return {true, pfp.b_bwt_select_1(r1.second.first + 1)};
     }
     else
-      return {false, 0};
+      return {false, pfp.n};
     
   }
+
+  // // Return the smallest i'>i such that LCP[i'] < h.
+  // inline std::pair<bool, size_t> next(size_t i, size_t h)
+  // {
+  //   // i + 1 -> rank is for (0 ... i - 1) interval
+  //   auto r = pfp.b_bwt_rank_1(i + 1) - 1;
+  //   const auto j = i - pfp.b_bwt_select_1(r + 1); // lex rank - 0-based
+  //   const auto &m = pfp.M[r];
+
+
+  //   if(m.len < h)
+  //   {
+  //     size_t h1 = h - m.len + pfp.w;
+  //     const auto s = pfp.b_bwt_select_1(r + 2) - pfp.b_bwt_select_1(r + 1) - 1; // # equal suffix
+
+  //     const auto k = pfp.w_wt.range_select(m.left, m.right, j + 1) + 1; // k+1 because w_wt is built without the first 0
+
+  //     const auto k1 = pfp.s_lcp_T.next(k,h1); 
+  //     if(k1.first > 0)
+  //     {
+  //       // This is a hack before implementing the prev_range operation on W.
+  //       const auto cnt = pfp.w_wt.range_count(m.left, m.right, k1.second.first - 1); // Check +1
+  //       if(cnt <= s)
+  //       {
+  //         size_t j1 = cnt;
+  //         return {true,(i-j+j1)};         
+  //       }
+  //       // const auto cnt = pfp.w_wt.range_count(m.left, m.right, k1.second.first); // Check +1
+  //       // const auto cnt1 = pfp.w_wt.range_count(m.left, m.right, k1.second.first - 1); // Check +1
+  //       // if(cnt <= s)
+  //       // {
+  //       //   size_t j1;
+  //       //   if (cnt != cnt1) j1 = cnt - 1;
+  //       //   else j1 = max(cnt - 1, j + 1) - 1;
+  //       //   return {true,(i-j+j1)};         
+  //       // }
+  //     }
+  //   }
+
+  //   // This is not necessary in Next sinc the lcp in k refers to the left
+  //   // // We find the largest row r'<= r (r'<r if j=0) with a point in column less than h
+  //   // if (j < s)
+  //   //   r--;
+  //   auto r1 = pfp.lcp_M.next(r, h); // r+1 is to simulate the right LCP
+  //   if (r1.first > 0)
+  //   {
+  //     // The answer is the first entry of the block r'
+  //     return {true, pfp.b_bwt_select_1(r1.second.first + 1)};
+  //   }
+  //   else
+  //     return {false, pfp.n};
+    
+  // }
 
   inline size_t sa(size_t i)
   {
@@ -360,7 +464,7 @@ public :
 
   inline size_t lcp(size_t i)
   {
-    if(i==0) return 0;
+    if(i==0 || i >= pfp.n) return 0;
     return lce(sa(i-1), sa(i));
   }
 
