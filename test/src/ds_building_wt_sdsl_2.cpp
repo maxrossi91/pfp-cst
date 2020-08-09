@@ -32,9 +32,7 @@
 #include <sdsl/int_vector.hpp>
 #include <sdsl/io.hpp>
 
-#include <pfp.hpp>
-#include <lce_support.hpp>
-#include <sa_support.hpp>
+#include <pfp_cst.hpp>
 
 #include <malloc_count.h>
 
@@ -59,14 +57,9 @@ int main(int argc, char* const argv[]) {
   verbose("Elapsed time (s): ", std::chrono::duration<double, std::ratio<1>>(t_insert_end - t_insert_start).count());
   auto time = std::chrono::duration<double, std::ratio<1>>(t_insert_end - t_insert_start).count();
 
-  verbose("Providing LCE support");
+  verbose("Providing CST support");
   _elapsed_time(
-      pfp_lce_support<pfp_wt_sdsl_2> lce_ds(pf)
-  );
-
-  verbose("Providing SA support");
-  _elapsed_time(
-      pfp_sa_support<pfp_wt_sdsl_2> pfp_sa(pf)
+    pfp_cst<pfp_wt_sdsl_2> pfp_cst_(pf)
   );
 
   auto mem_peak = malloc_count_peak();

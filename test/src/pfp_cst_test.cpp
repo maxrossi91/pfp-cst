@@ -80,7 +80,7 @@ public:
 std::string test_file;
 
 typedef sdsl::cst_sct3<sdsl::csa_wt<sdsl::wt_huff<sdsl::rrr_vector<>>>, sdsl::lcp_support_sada<>> sdsl_cst_t;
-typedef pfp_wt_sdsl_2 wt_t;
+typedef pfp_wt_wm wt_t;
 typedef sdsl_cst_t::node_type sdsl_node_t;
 typedef pfp_cst<wt_t>::node_t pfp_node_t;
 

@@ -516,7 +516,15 @@ std::string pf_parsing<pfp_wt_sdsl_2>::filesuffix() const
   return ".pf.wt_sdsl_2.ds";
 }
 
+// Specialization for pfp_wt_wm
+template <>
+std::string pf_parsing<pfp_wt_wm>::filesuffix() const
+{
+  return ".pf.wt_wm.ds";
+}
+
   using pf_parsing_custom = pf_parsing<pfp_wt_custom>;
   using pf_parsing_sdsl = pf_parsing<pfp_wt_sdsl>;
+  using pf_parsing_wm = pf_parsing<pfp_wt_wm>;
 
 #endif /* end of include guard: _PFP_HH */
