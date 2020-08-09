@@ -4,7 +4,7 @@
 # ##############################################################################
 
 # Add the basic compiler options
-add_compile_options("-std=c++11")
+add_compile_options("-std=c++14")
 # add_compile_options("-Werror")
 add_compile_options("-Wall")
 add_compile_options("-Wextra")

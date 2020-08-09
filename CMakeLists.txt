@@ -51,5 +51,6 @@ endif()
 
 add_subdirectory(include)
 add_subdirectory(test)
+add_subdirectory(benchmarks/src)
 
 configure_file(${PROJECT_SOURCE_DIR}/pipeline/pfp_ds ${PROJECT_BINARY_DIR}/pfp_ds)
