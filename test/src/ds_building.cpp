@@ -67,13 +67,14 @@ int main(int argc, char* const argv[]) {
 
   size_t space = 0;
   if(args.memo){
-    verbose("Dictionary size (bytes)  : ", sdsl::size_in_bytes(pf.dict));
-    verbose("Parse size (bytes)       : ", sdsl::size_in_bytes(pf.pars));
-    verbose("Wavelet tree size (bytes): ", sdsl::size_in_bytes(pf.w_wt));
-    verbose("M size (bytes)           : ", sdsl::size_in_bytes(pf.M));
+    // verbose("Dictionary size (bytes)  : ", sdsl::size_in_bytes(pf.dict));
+    // verbose("Parse size (bytes)       : ", sdsl::size_in_bytes(pf.pars));
+    // verbose("Wavelet tree size (bytes): ", sdsl::size_in_bytes(pf.w_wt));
+    // verbose("M size (bytes)           : ", sdsl::size_in_bytes(pf.M));
+    pf.print_sizes();
 
     space = sdsl::size_in_bytes(pf);
-    verbose("PFP DS size (bytes): ", space);
+    verbose("PFP CST size (bytes): ", space);
   }
 
   if(args.store){

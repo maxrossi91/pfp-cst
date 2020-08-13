@@ -34,7 +34,7 @@
 #include<lce_support.hpp>
 #include<sa_support.hpp>
 
-template<class wt_t = pfp_wt_custom>
+template<class wt_t = pfp_wt_wm>
 class pfp_cst{
 protected:
 

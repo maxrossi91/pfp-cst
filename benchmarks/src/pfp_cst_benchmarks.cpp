@@ -40,7 +40,7 @@ extern "C" {
 #include <benchmark/benchmark.h>
 
 typedef sdsl::cst_sct3<sdsl::csa_wt<sdsl::wt_huff<sdsl::rrr_vector<>>>, sdsl::lcp_support_sada<>> sdsl_cst_t;
-typedef pfp_wt_sdsl_2 wt_t;
+typedef pfp_wt_wm wt_t;
 typedef sdsl_cst_t::node_type sdsl_node_t;
 typedef pfp_cst<wt_t>::node_t pfp_node_t;
 
@@ -141,13 +141,14 @@ static void BM_WarmUp(benchmark::State &_state)
     }
 
     _state.counters["Size(bytes)"] = 0;
+    _state.counters["Length"] = 0;
     _state.counters["Bits_x_Symbol"] = 0;
     _state.counters["Queries"] = 0;
     _state.counters["Time_x_Query"] = 0;
 }
 BENCHMARK(BM_WarmUp);
 
-typedef std::function < void(benchmark::State &, cst_w *&, size_t &, sample_set_t &, size_t &)> lambda_t;
+typedef std::function < void(benchmark::State &, cst_w * const&, const size_t &, const sample_set_t &, const size_t &)> lambda_t;
 
 // Benchmark Parent query
 auto BM_Parent =
@@ -161,6 +162,7 @@ auto BM_Parent =
     }
 
     _state.counters["Size(bytes)"] = _size;
+    _state.counters["Length"] = _length;
     _state.counters["Bits_x_Symbol"] = _size * 8.0 / _length;
     _state.counters["Queries"] = _samples.first.size();
     _state.counters["Time_x_Query"] = benchmark::Counter(
@@ -179,6 +181,7 @@ auto BM_F_Child =
     }
 
     _state.counters["Size(bytes)"] = _size;
+    _state.counters["Length"] = _length;
     _state.counters["Bits_x_Symbol"] = _size * 8.0 / _length;
     _state.counters["Queries"] = _samples.first.size();
     _state.counters["Time_x_Query"] = benchmark::Counter(
@@ -197,6 +200,7 @@ auto BM_Sibling =
     }
 
     _state.counters["Size(bytes)"] = _size;
+    _state.counters["Length"] = _length;
     _state.counters["Bits_x_Symbol"] = _size * 8.0 / _length;
     _state.counters["Queries"] = _samples.first.size();
     _state.counters["Time_x_Query"] = benchmark::Counter(
@@ -215,6 +219,7 @@ auto BM_LCA =
     }
 
     _state.counters["Size(bytes)"] = _size;
+    _state.counters["Length"] = _length;
     _state.counters["Bits_x_Symbol"] = _size * 8.0 / _length;
     _state.counters["Queries"] = _samples.first.size();
     _state.counters["Time_x_Query"] = benchmark::Counter(
@@ -233,6 +238,7 @@ auto BM_Slink =
     }
 
     _state.counters["Size(bytes)"] = _size;
+    _state.counters["Length"] = _length;
     _state.counters["Bits_x_Symbol"] = _size * 8.0 / _length;
     _state.counters["Queries"] = _samples.first.size();
     _state.counters["Time_x_Query"] = benchmark::Counter(
@@ -251,6 +257,7 @@ auto BM_S_Depth =
     }
 
     _state.counters["Size(bytes)"] = _size;
+    _state.counters["Length"] = _length;
     _state.counters["Bits_x_Symbol"] = _size * 8.0 / _length;
     _state.counters["Queries"] = _samples.first.size();
     _state.counters["Time_x_Query"] = benchmark::Counter(
@@ -270,6 +277,7 @@ auto BM_LAQ =
     }
 
     _state.counters["Size(bytes)"] = _size;
+    _state.counters["Length"] = _length;
     _state.counters["Bits_x_Symbol"] = _size * 8.0 / _length;
     _state.counters["Queries"] = _samples.first.size();
     _state.counters["Time_x_Query"] = benchmark::Counter(
@@ -288,6 +296,7 @@ auto BM_Letter =
         }
 
         _state.counters["Size(bytes)"] = _size;
+        _state.counters["Length"] = _length;
         _state.counters["Bits_x_Symbol"] = _size * 8.0 / _length;
         _state.counters["Queries"] = _samples.first.size();
         _state.counters["Time_x_Query"] = benchmark::Counter(
@@ -307,6 +316,7 @@ auto BM_Child =
     }
 
     _state.counters["Size(bytes)"] = _size;
+    _state.counters["Length"] = _length;
     _state.counters["Bits_x_Symbol"] = _size * 8.0 / _length;
     _state.counters["Queries"] = _samples.first.size();
     _state.counters["Time_x_Query"] = benchmark::Counter(
@@ -397,7 +407,7 @@ int main(int argc, char *argv[])
         {"lca", BM_LCA},
         {"slink", BM_Slink},
         {"s_depth", BM_S_Depth},
-        {"laq", BM_LAQ},
+        // {"laq", BM_LAQ},
         {"letter", BM_Letter},
         {"child", BM_Child}};
 
@@ -407,7 +417,7 @@ int main(int argc, char *argv[])
             
             auto bm_name = cst.first + "-" + op.first;
 
-            benchmark::RegisterBenchmark(bm_name.c_str(), BM_Parent, cst.second.first, cst.second.second, samples, n_leaf);
+            benchmark::RegisterBenchmark(bm_name.c_str(), op.second, cst.second.first, cst.second.second, samples, n_leaf);
         }
 
     }

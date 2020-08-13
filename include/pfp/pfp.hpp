@@ -42,7 +42,7 @@ extern "C" {
 }
 
 
-template< class wt_t = pfp_wt_custom>//sdsl::sd_vector<>>
+template< class wt_t = pfp_wt_wm>//sdsl::sd_vector<>>
 class pf_parsing{
 public:
   struct M_entry_t{

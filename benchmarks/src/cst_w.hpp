@@ -36,35 +36,35 @@ public :
   typedef sdsl::bp_interval<uint64_t> node_t;
 
   // The root of the suffix tree
-  virtual inline void root();
+  virtual inline void root() = 0;
 
   // The length of s(v).
-  virtual inline void s_depth(node_t v);
+  virtual inline void s_depth(node_t v) = 0;
 
   // The parent node of v.
-  virtual inline void parent(node_t v);
+  virtual inline void parent(node_t v) = 0;
 
   // The alphabetically first child of v. 
-  virtual inline void f_child(node_t v);
+  virtual inline void f_child(node_t v) = 0;
 
   // The alphabetically next sibling of v.
-  virtual inline void n_sibling(node_t v);
+  virtual inline void n_sibling(node_t v) = 0;
 
   // The suffix link of v, i.e., the node w s.t. s(v) = a\cdot s(w) for a symbol a.
-  virtual inline void slink(node_t v);
+  virtual inline void slink(node_t v) = 0;
 
   // The lowest common ancestor of v and w.
-  virtual inline void lca(node_t v, node_t w);
+  virtual inline void lca(node_t v, node_t w) = 0;
 
   // The node w s.t. the first letter on edge (v, w) is a. 
   // Retrn v if no child with letter a exists.
-  virtual inline void child(node_t v, uint8_t a);
+  virtual inline void child(node_t v, uint8_t a) = 0;
 
   // The letter s(v)[i].
-  virtual inline void letter(node_t v, size_t i);
+  virtual inline void letter(node_t v, size_t i) = 0;
 
   // Level ancestor query, i.e., the highest ancestor w of v with \textsc{SDepth}(w) \ge d.
-  virtual inline void laq(node_t v, size_t d);
+  virtual inline void laq(node_t v, size_t d) = 0;
 
 
 };
