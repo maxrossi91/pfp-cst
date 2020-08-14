@@ -66,7 +66,8 @@ public :
   // Level ancestor query, i.e., the highest ancestor w of v with \textsc{SDepth}(w) \ge d.
   virtual inline void laq(node_t v, size_t d) = 0;
 
-
+  // Full task: find maximal k-mer that occurs at least t times
+  virtual inline int full_task(size_t k, size_t t) = 0;
 };
 
 #endif /* end of include guard: _CST_W_HH */

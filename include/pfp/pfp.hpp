@@ -433,6 +433,7 @@ public:
     written_bytes += select_b_p.serialize(out, child, "select_b_p");
     written_bytes += s_lcp_T.serialize(out, child, "s_lcp_T");
     written_bytes += rmq_s_lcp_T.serialize(out, child, "rmq_s_lcp_T");
+    written_bytes += lcp_M.serialize(out, child, "s_lcp_T");
     // written_bytes += dict.serialize(out, child, "dictionary");
     // written_bytes += pars.serialize(out, child, "parse");
     // written_bytes += sdsl::serialize(freq, out, child, "frequencies");
@@ -472,6 +473,7 @@ public:
     select_b_p.load(in, &b_p);
     s_lcp_T.load(in);
     rmq_s_lcp_T.load(in);
+    lcp_M.load(in);
     // dict.load(in);
     // pars.load(in);
     // sdsl::load(freq, in);

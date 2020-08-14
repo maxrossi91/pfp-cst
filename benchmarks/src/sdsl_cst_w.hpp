@@ -109,7 +109,36 @@ public :
 
   }
 
+  // Full task: find maximal k-mer that occurs at least t times
+  virtual inline int full_task(size_t k, size_t t)
+  {
+    node_t root = cst->root();
+    size_t cnt = 0;
 
+    std::stack<node_t> st;
+
+    st.push(root);
+    while (!st.empty())
+    {
+      auto curr = st.top();
+      st.pop();
+
+      bool maximal = true;
+      auto child = cst->select_child(curr,1);
+      while (child != root)
+      {
+        if (cst->size(child) >= t and cst->depth(child) <= k)
+        {
+          st.push(child);
+          maximal = false;
+        }
+        child = cst->sibling(child);
+      }
+      if (maximal)
+        cnt++;
+    }
+    return cnt;
+  }
 };
 
 #endif /* end of include guard: _SDSL_CST_W_HH */

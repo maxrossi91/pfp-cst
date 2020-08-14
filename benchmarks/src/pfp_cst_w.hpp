@@ -26,6 +26,7 @@
 #define _PFP_CST_W_HH
 
 #include <iostream>
+#include <stack>
 #include <cst_w.hpp>
 
 #include <pfp_cst.hpp>
@@ -106,7 +107,35 @@ public :
     benchmark::DoNotOptimize(cst->laq({v.i, v.j}, d));
   }
 
+  // Full task: find maximal k-mer that occurs at least t times
+  virtual inline int full_task(size_t k, size_t t)
+  {
+    typename cst_t::node_t root = cst->root();
+    size_t cnt = 0;
 
+    std::stack<typename cst_t::node_t> st;
+
+    st.push(root);
+    while(!st.empty())
+    {
+      auto curr = st.top(); st.pop();
+
+      bool maximal = true;
+      auto child = cst->f_child(curr);
+      while (child.l != root.l or child.r != root.r)
+      {
+        if(cst->count(child) >= t and cst->s_depth(child) <= k)
+        {
+          st.push(child); maximal = false;
+        }
+        child = cst->n_sibling(child);
+      }
+      if(maximal)
+        cnt++;
+
+    }
+    return cnt;
+  }
 };
 
 #endif /* end of include guard: _PFP_CST_W_HH */

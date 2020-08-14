@@ -323,6 +323,31 @@ auto BM_Child =
         _samples.first.size(), benchmark::Counter::kIsIterationInvariantRate | benchmark::Counter::kInvert);
 };
 
+// Benchmark Full task query
+auto BM_Full_task =
+[](benchmark::State &_state, auto _idx, const auto &_size, auto &_samples, const auto &_length) {
+
+    size_t cnt = 0;
+    size_t k = 5;
+    size_t t = 20;
+    
+    for (auto _ : _state)
+    {
+        for (auto &node : _samples.second)
+        {
+            cnt = _idx->full_task(k,t);
+        }
+    }
+
+    _state.counters["Cnt k-mers"] = cnt;
+    _state.counters["Size(bytes)"] = _size;
+    _state.counters["Length"] = _length;
+    _state.counters["Bits_x_Symbol"] = _size * 8.0 / _length;
+    _state.counters["Queries"] = 1;
+    _state.counters["Time_x_Query"] = benchmark::Counter(
+        1, benchmark::Counter::kIsIterationInvariantRate | benchmark::Counter::kInvert);
+};
+
 int main(int argc, char *argv[])
 {
 
@@ -367,7 +392,7 @@ int main(int argc, char *argv[])
     sdsl::load_from_file(pf, filename);
 
     pfp_cst<wt_t> pf_cst(pf);
-    
+
     // Load SDSL
     std::cout << "Loading SDSL CST"<< std::endl;
     sdsl_cst_t sdsl_cst;
@@ -409,13 +434,14 @@ int main(int argc, char *argv[])
         {"s_depth", BM_S_Depth},
         // {"laq", BM_LAQ},
         {"letter", BM_Letter},
-        {"child", BM_Child}};
+        {"child", BM_Child},
+        {"full_task", BM_Full_task}};
 
     for(auto cst: csts){
 
         for(auto op: ops){
             
-            auto bm_name = cst.first + "-" + op.first;
+            auto bm_name = cst.first + "," + op.first;
 
             benchmark::RegisterBenchmark(bm_name.c_str(), op.second, cst.second.first, cst.second.second, samples, n_leaf);
         }
