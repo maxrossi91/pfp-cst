@@ -20,7 +20,8 @@ dirname         = os.path.dirname(os.path.abspath(__file__))
 bigbwt_dirname  = os.path.join(dirname, "_deps/bigbwt-build")
 ds_dirname      = os.path.join(dirname, "test/src")
 
-parse_exe       = os.path.join(bigbwt_dirname, "newscan.x")
+parse_fasta_exe = os.path.join(bigbwt_dirname, "newscan.x")
+parse_exe       = os.path.join(bigbwt_dirname, "pscan.x")
 parseNT_exe     = os.path.join(bigbwt_dirname, "newscanNT.x")
 build_pfp_ds          = os.path.join(ds_dirname, "ds_building")
 build_pfp_ds64          = os.path.join(ds_dirname, "ds_building64")
@@ -61,9 +62,14 @@ def main():
     # ---------- parsing of the input file
     start0 = start = time.time()
     if args.t>0:
-      command = "{exe} {file} -w {wsize} -p {modulus} -t {th}".format(
-              exe = os.path.join(args.bigbwt_dir,parse_exe),
-              wsize=args.wsize, modulus = args.mod, th=args.t, file=args.input)
+      if args.f:
+        command = "{exe} {file} -w {wsize} -p {modulus} -t {th} -f".format(
+                exe = os.path.join(args.bigbwt_dir,parse_fasta_exe),
+                wsize=args.wsize, modulus = args.mod, th=args.t, file=args.input)
+      else:
+        command = "{exe} {file} -w {wsize} -p {modulus} -t {th}".format(
+                exe = os.path.join(args.bigbwt_dir,parse_exe),
+                wsize=args.wsize, modulus = args.mod, th=args.t, file=args.input)
     else:
       command = "{exe} {file} -w {wsize} -p {modulus}".format(
               exe = os.path.join(args.bigbwt_dir,parseNT_exe),
