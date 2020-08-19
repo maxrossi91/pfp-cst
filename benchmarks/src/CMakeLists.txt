@@ -7,3 +7,12 @@ add_executable(pfp_cst_benchmarks64 pfp_cst_benchmarks.cpp)
 target_link_libraries(pfp_cst_benchmarks64 common strdup pfp gsacak sdsl divsufsort divsufsort64 malloc_count benchmark pthread)
 target_include_directories(pfp_cst_benchmarks64 PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 target_compile_options(pfp_cst_benchmarks64 PUBLIC -DM64)
+
+add_executable(pfp_cst_benchmarks_pfp_only pfp_cst_benchmarks_pfp_only.cpp)
+target_link_libraries(pfp_cst_benchmarks_pfp_only common strdup pfp gsacak sdsl divsufsort divsufsort64 malloc_count benchmark pthread)
+target_include_directories(pfp_cst_benchmarks_pfp_only PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+
+add_executable(pfp_cst_benchmarks_pfp_only64 pfp_cst_benchmarks_pfp_only.cpp)
+target_link_libraries(pfp_cst_benchmarks_pfp_only64 common strdup pfp gsacak sdsl divsufsort divsufsort64 malloc_count benchmark pthread)
+target_include_directories(pfp_cst_benchmarks_pfp_only64 PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+target_compile_options(pfp_cst_benchmarks_pfp_only64 PUBLIC -DM64)

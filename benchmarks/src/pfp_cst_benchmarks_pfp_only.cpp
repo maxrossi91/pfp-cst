@@ -28,9 +28,6 @@
 #include <sdsl/suffix_trees.hpp>
 
 #include <pfp_cst.hpp>
-#include <cst_w.hpp>
-#include <pfp_cst_w.hpp>
-#include <sdsl_cst_w.hpp>
 
 
 extern "C" {
@@ -39,54 +36,52 @@ extern "C" {
 
 #include <benchmark/benchmark.h>
 
-typedef sdsl::cst_sct3<sdsl::csa_wt<sdsl::wt_huff<sdsl::rrr_vector<>>>, sdsl::lcp_support_sada<>> sdsl_cst_t;
 typedef pfp_wt_wm wt_t;
-typedef sdsl_cst_t::node_type sdsl_node_t;
-typedef pfp_cst<wt_t>::node_t pfp_node_t;
 typedef pfp_cst<wt_t> pfp_cst_t;
+typedef pfp_cst<wt_t>::node_t pfp_node_t;
 
 typedef struct
 {
-    std::vector<sdsl_node_t> leaves;
-    std::vector<sdsl_node_t> first;  // Random leaves and their path to the root
-    std::vector<sdsl_node_t> second; // first_sampling but only considering nodes with >= 5 children
-    std::vector<sdsl_node_t> third;  // Suffix_link walk
-    std::vector<std::pair<sdsl_node_t, sdsl_node_t>> fourth;
-    std::vector<sdsl_node_t> fifth;
-    std::vector<sdsl_node_t> sixth;
+    std::vector<pfp_node_t> leaves;
+    std::vector<pfp_node_t> first;  // Random leaves and their path to the root
+    std::vector<pfp_node_t> second; // first_sampling but only considering nodes with >= 5 children
+    std::vector<pfp_node_t> third;  // Suffix_link walk
+    std::vector<std::pair<pfp_node_t, pfp_node_t>> fourth;
+    std::vector<pfp_node_t> fifth;
+    std::vector<pfp_node_t> sixth;
     std::vector<size_t> depths;
     std::vector<size_t> sdepths;
     std::vector<size_t> letters;
 } sample_set_t;
 
 // Adapted from: https://github.com/elarielcl/BT-CST/blob/master/experiments/test_sct3_CST.cpp
-void generate_samples(size_t Max_Sampling_Size, size_t n_leaf, size_t seed, sample_set_t* samples, sdsl_cst_t* sdsl_cst)
+void generate_samples(size_t Max_Sampling_Size, size_t n_leaf, size_t seed, sample_set_t* samples, pfp_cst_t* pf_cst)
 {
     srand(seed);
 
     for (int i = 0; i < Max_Sampling_Size; ++i)
     {
         int r = (rand() % n_leaf) + 1;
-        samples->leaves.push_back(sdsl_cst->select_leaf(r));
+        samples->leaves.push_back(pf_cst->select_leaf(r));
     }
 
     for (auto p : samples->leaves)
     {
         auto pp = p;
-        while (p != sdsl_cst->root() && samples->second.size() < Max_Sampling_Size)
+        while (p != pf_cst->root() && samples->second.size() < Max_Sampling_Size)
         {
             if (samples->first.size() < Max_Sampling_Size)
                 samples->first.push_back(p);
-            if (sdsl_cst->children(p).size() >= 3 && sdsl_cst->depth(p) >= 4)
+            if (pf_cst->children(p).size() >= 3 && pf_cst->s_depth(p) >= 4)
                 samples->second.push_back(p);
-            p = sdsl_cst->parent(p);
+            p = pf_cst->parent(p);
         }
 
-        p = sdsl_cst->parent(pp);
-        while (p != sdsl_cst->root() && samples->third.size() < Max_Sampling_Size)
+        p = pf_cst->parent(pp);
+        while (p != pf_cst->root() && samples->third.size() < Max_Sampling_Size)
         {
             samples->third.push_back(p);
-            p = sdsl_cst->sl(p);
+            p = pf_cst->slink(p);
         }
     }
 
@@ -94,18 +89,18 @@ void generate_samples(size_t Max_Sampling_Size, size_t n_leaf, size_t seed, samp
     {
         int r1 = (rand() % n_leaf) + 1;
         int r2 = (rand() % n_leaf) + 1;
-        samples->fourth.push_back({sdsl_cst->select_leaf(r1), sdsl_cst->select_leaf(r2)});
+        samples->fourth.push_back({pf_cst->select_leaf(r1), pf_cst->select_leaf(r2)});
     }
 
     for (int i = 0; i < Max_Sampling_Size; ++i)
     {
         int r = (rand() % n_leaf) + 1;
-        auto p = sdsl_cst->select_leaf(r);
-        if (sdsl_cst->node_depth(p) >= 10)
+        auto p = pf_cst->select_leaf(r);
+        if (pf_cst->node_depth(p) >= 10)
         {
             samples->fifth.push_back(p);
         }
-        if (sdsl_cst->depth(p) >= 10)
+        if (pf_cst->s_depth(p) >= 10)
         {
             samples->sixth.push_back(p);
         }
@@ -113,25 +108,27 @@ void generate_samples(size_t Max_Sampling_Size, size_t n_leaf, size_t seed, samp
 
     for (auto node : samples->fifth)
     {
-        int depth = sdsl_cst->node_depth(node);
+        int depth = pf_cst->node_depth(node);
         samples->depths.push_back((rand() % depth) + 1);
     }
 
     for (auto node : samples->sixth)
     {
-        int sdepth = sdsl_cst->depth(node);
+        int sdepth = pf_cst->s_depth(node);
         samples->sdepths.push_back((rand() % sdepth) + 1);
     }
 
     for (auto node : samples->second)
     {
-        int c = sdsl_cst->children(node).size();
-        auto r = sdsl_cst->select_child(node, (rand() % c) + 1);
-        auto letter = sdsl_cst->edge(r, 1 + sdsl_cst->depth(node));
+        int c = pf_cst->children(node).size();
+        auto r = pf_cst->select_child(node, (rand() % c) + 1);
+        auto letter = pf_cst->letter(r, 1 + pf_cst->s_depth(node));
         if (letter > 0)
             samples->letters.push_back(letter);
     }
 }
+
+
 
 // Benchmark Warm-up
 static void BM_WarmUp(benchmark::State &_state)
@@ -146,11 +143,10 @@ static void BM_WarmUp(benchmark::State &_state)
     _state.counters["Bits_x_Symbol"] = 0;
     _state.counters["Queries"] = 0;
     _state.counters["Time_x_Query"] = 0;
-    _state.counters["Cnt k-mers"] = 0;
 }
 BENCHMARK(BM_WarmUp);
 
-typedef std::function < void(benchmark::State &, cst_w * const&, const size_t &, const sample_set_t &, const size_t &)> lambda_t;
+typedef std::function < void(benchmark::State &, pfp_cst_t * const&, const size_t &, const sample_set_t &, const size_t &)> lambda_t;
 
 // Benchmark Parent query
 auto BM_Parent =
@@ -335,7 +331,31 @@ auto BM_Full_task =
     
     for (auto _ : _state)
     {
-        cnt = _idx->full_task(k,t);
+            pfp_node_t root = _idx->root();
+            size_t cnt = 0;
+
+            std::stack<pfp_node_t> st;
+
+            st.push(root);
+            while (!st.empty())
+            {
+                auto curr = st.top();
+                st.pop();
+
+                bool maximal = true;
+                auto child = _idx->f_child(curr);
+                while (child.l != root.l or child.r != root.r)
+                {
+                    if (_idx->count(child) >= t and _idx->s_depth(child) <= k)
+                    {
+                        st.push(child);
+                        maximal = false;
+                    }
+                    child = _idx->n_sibling(child);
+                }
+                if (maximal)
+                    cnt++;
+            }
     }
 
     _state.counters["Cnt k-mers"] = cnt;
@@ -392,37 +412,24 @@ int main(int argc, char *argv[])
 
     pfp_cst<wt_t> pf_cst(pf);
 
-    // Load SDSL
-    std::cout << "Loading SDSL CST"<< std::endl;
-    sdsl_cst_t sdsl_cst;
-    filename = test_file + ".sdsl.cst";
-    sdsl::load_from_file(sdsl_cst, filename);
-
-    size_t Max_Sampling_Size = 1000;
-    size_t n_leaf = sdsl_cst.size();
+    size_t Max_Sampling_Size = 10;
+    size_t n_leaf = pf_cst.size();
     size_t seed = 0;
 
     sample_set_t samples;
 
     std::cout << "Generating " << Max_Sampling_Size << " samples" << std::endl;
-    generate_samples(Max_Sampling_Size, n_leaf, seed, &samples, &sdsl_cst);
+    generate_samples(Max_Sampling_Size, n_leaf, seed, &samples, &pf_cst);
 
     // Get wrappers
-    // pfp_cst_w<pfp_cst<wt_t>> pfp_w(&pf_cst);
-    // sdsl_cst_w<sdsl_cst_t> sdsl_w(&sdsl_cst);
-    cst_w* pfp_w = new pfp_cst_w<pfp_cst<wt_t>>(&pf_cst);
-    cst_w* sdsl_w = new sdsl_cst_w<sdsl_cst_t>(&sdsl_cst);
-
     size_t pfp_size = sdsl::size_in_bytes(pf);
-    size_t sdsl_size = sdsl::size_in_bytes(sdsl_cst);
 
     std::cout << "Registering benchmarks" << std::endl;
     std::string pfp_s = "pfp";
     std::string sdsl_s = "sdsl";
 
-    std::vector<std::pair<std::string, std::pair<cst_w*, size_t> > >  csts = {
-        {"pfp", {pfp_w,pfp_size}},
-        {"sdsl",{sdsl_w,sdsl_size}}};
+    std::vector<std::pair<std::string, std::pair<pfp_cst_t*, size_t> > >  csts = {
+        {"pfp", {&pf_cst,pfp_size}}};
 
     std::vector<std::pair<std::string, lambda_t>> ops = {
         {"parent", BM_Parent},

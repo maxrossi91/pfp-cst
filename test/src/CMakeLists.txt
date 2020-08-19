@@ -32,6 +32,9 @@ target_compile_options(ds_building_wt_wm64 PUBLIC -DM64)
 add_executable(sdsl_baseline_cst sdsl_baseline_cst.cpp)
 target_link_libraries(sdsl_baseline_cst common strdup sdsl divsufsort divsufsort64 malloc_count)
 
+add_executable(sdsl_cst_sada sdsl_cst_sada.cpp)
+target_link_libraries(sdsl_cst_sada common strdup sdsl divsufsort divsufsort64 malloc_count)
+
 add_executable(sdsl_baseline_csa sdsl_baseline_csa.cpp)
 target_link_libraries(sdsl_baseline_csa common strdup sdsl divsufsort divsufsort64 malloc_count)
 

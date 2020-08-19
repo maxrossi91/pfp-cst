@@ -70,7 +70,7 @@ public :
 
   // A node is represented as an interval of the Suffix Array of the text
   // Left and right boundaries are inclusive
-  typedef struct{
+  typedef struct node{
     size_t l; // Left boundary of the interval representing a node
     size_t r; // Right bounadry of the interval representing the node
 
@@ -78,12 +78,30 @@ public :
     {
       return (l==r);
     }
+
+    bool operator!=(const struct node &b)
+    {
+      return ((this->l != b.l) or (this->r != b.r));
+    }
   } node_t;
 
   // The root of the suffix tree
   inline node_t root()
   {
     return {0,pfp.n-1};
+  }
+
+  // The number of leaves of the suffix tree
+  inline size_t size()
+  {
+    return pfp.n;
+  }
+
+  // The the i-th leaf of the suffix tree (1-based from left to right). 
+  inline node_t select_leaf(size_t i)
+  {
+    assert(i>0 and i <= pfp.n);
+    return {i-1,i-1};
   }
 
   // The suffix position i if v is the leaf of suffix S[i..n]
@@ -221,14 +239,14 @@ public :
   }
 
   // The node w s.t. the first letter on edge (v, w) is a. 
-  // Retrn v if no child with letter a exists.
+  // Retrn root if no child with letter a exists.
   inline node_t child(node_t v, uint8_t a)
   {
     // Child(v, a).We opt for simply traversing the children using FChild and NSibling and choosing the child w where Letter(w,SDepth(v) + 1) =a.
     node_t w = f_child(v);
     while(letter(w, s_depth(v)+1) != a){
       node_t tmp = n_sibling(w);
-      if(tmp.l == w.l and tmp.r == w.r)
+      if(tmp.l == w.l and tmp.r == w.r) // TODO: double check this. The error code of n_sibling is root not w
         return root();
       w = tmp;
     }
@@ -249,6 +267,45 @@ public :
     const auto p = prev(v.l+1, d);
     const auto n = next(v.r, d);
     return {p.second, n.second - 1};
+  }
+
+  // All children of v.
+  inline std::vector<node_t> children(node_t v)
+  {
+    std::vector<node_t> children;
+    node_t child = f_child(v);
+    while(child != root())
+    {
+      children.push_back(child);
+      child = n_sibling(child);
+    }
+    return children;
+  }
+
+  // All children of v.
+  inline size_t node_depth(node_t v)
+  {
+    size_t depth = 0;
+    while(v != root())
+    {
+      v = parent(v);
+      depth++;
+    }
+    return depth;
+  }
+
+  // The i-th child w of v.
+  // Retrn root if no child exists.
+  inline node_t select_child(node_t v, size_t i)
+  {
+    // Child(v, a).We opt for simply traversing the children using FChild and NSibling and choosing the child w where Letter(w,SDepth(v) + 1) =a.
+    node_t w = f_child(v);
+    while (i > 0 and w != root())
+    {
+      w = n_sibling(w);
+      --i;
+    }
+    return w;
   }
 
 // protected:

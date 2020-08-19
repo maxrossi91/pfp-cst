@@ -654,13 +654,13 @@ public:
     return wt_i.range_search_2d(0, i - 1, 0, t, false).first;
   }
 
-  size_type range_select (const uint32_t t, const uint32_t b, const size_type r) const override {
-    auto res_pair = wt_i.range_search_2d(0, size(), t, b, true);
-    const auto count = res_pair.first;
-    std::sort(res_pair.second.begin(), res_pair.second.end(), [](const std::pair<uint32_t, size_type> & a_p, const std::pair<uint32_t, size_type> & b_p) { return a_p.first < b_p.first; });
+  // size_type range_select (const uint32_t t, const uint32_t b, const size_type r) const override {
+  //   auto res_pair = wt_i.range_search_2d(0, size(), t, b, true);
+  //   const auto count = res_pair.first;
+  //   std::sort(res_pair.second.begin(), res_pair.second.end(), [](const std::pair<uint32_t, size_type> & a_p, const std::pair<uint32_t, size_type> & b_p) { return a_p.first < b_p.first; });
 
-    return res_pair.second[r - 1].first;
-  }
+  //   return res_pair.second[r - 1].first;
+  // }
 
   size_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const override {
     sdsl::structure_tree_node *child = sdsl::structure_tree::add_child(v, name, sdsl::util::class_name(*this));
