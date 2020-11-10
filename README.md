@@ -51,23 +51,23 @@ make
 
 Please, if you use this tool in an academic setting cite the following paper:
 
-@inproceedings{BoucherCGHMNR20,
-  author    = {Christina Boucher and
-                Ondřej Cvacho and
-                Travis Gagie and
-                Jan Holub and
-                Giovanni Manzini and
-                Gonzalo Navarro and
-                Massimiliano Rossi},
-  editor    = {Martin Farach-Colton and
-               Sabine Storandt},
-  title     = {PFP Compressed Suffix Trees},
-  booktitle = {Proceedings of the Symposium on Algorithm Engineering and Experiments,
-               {ALENEX} 2021, Alexandria, VA, USA, January 10-11, 2020},
-  publisher = {{SIAM}},
-  year      = {2021},
-  note      = {(to appear)}
-}
+    @inproceedings{BoucherCGHMNR20,
+    author    = {Christina Boucher and
+                    Ondřej Cvacho and
+                    Travis Gagie and
+                    Jan Holub and
+                    Giovanni Manzini and
+                    Gonzalo Navarro and
+                    Massimiliano Rossi},
+    editor    = {Martin Farach-Colton and
+                Sabine Storandt},
+    title     = {PFP Compressed Suffix Trees},
+    booktitle = {Proceedings of the Symposium on Algorithm Engineering and Experiments,
+                {ALENEX} 2021, Alexandria, VA, USA, January 10-11, 2020},
+    publisher = {{SIAM}},
+    year      = {2021},
+    note      = {(to appear)}
+    }
 
 
 Previous axVix version:
