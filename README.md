@@ -1,5 +1,5 @@
-# pfp-data-structures
-Data structures described in [1] supporting Longest Common Extensions (LCE) and Suffix Array (SA) queries, built on the prefix-free parsing of the text [2][3].
+# Prefix-Free Parsng Compressed Suffix Tree
+Compressed suffix tree described in [1], built on the prefix-free parsing of the text [2][3].
 
 # Usage
 
@@ -20,7 +20,7 @@ infile - input file name.
 ### Download
 
 ```console
-git clone https://github.com/maxrossi91/pfp-data-structures
+git clone https://github.com/maxrossi91/pfp-cst
 ```
 
 ### Compile
@@ -61,12 +61,12 @@ Please, if you use this tool in an academic setting cite the following paper:
                     Massimiliano Rossi},
     editor    = {Martin Farach-Colton and
                 Sabine Storandt},
-    title     = {PFP Compressed Suffix Trees},
+    title     = {{PFP Compressed Suffix Trees}},
     booktitle = {Proceedings of the Symposium on Algorithm Engineering and Experiments,
                 {ALENEX} 2021, Alexandria, VA, USA, January 10-11, 2020},
     publisher = {{SIAM}},
     year      = {2021},
-    note      = {(to appear)}
+    pages     = {60--72}
     }
 
 
@@ -107,7 +107,7 @@ Previous axVix version:
 
 # References
 
-[1] Christina Boucher, Ondřej Cvacho, Travis Gagie, Jan Holub, Giovanni Manzini, Gonzalo Navarro, and Massimiliano Rossi . *"PFP Data Structures"*, CoRR abs/xxxx.xxxxx (2020).
+[1] Christina Boucher, Ondřej Cvacho, Travis Gagie, Jan Holub, Giovanni Manzini, Gonzalo Navarro, and Massimiliano Rossi . *"PFP Compressed Suffix Tree"*, In Proc. of the SIAM Symposium onAlgorithm Engineering and Experiments (ALENEX21), pp. 60-72. (2021).
 
 [2] Christina Boucher, Travis Gagie, Alan Kuhnle and Giovanni Manzini, *"Prefix-Free Parsing for Building Big BWTs"*, In Proc. of the 18th International Workshop on Algorithms in Bioinformatics (WABI 2018).
 
