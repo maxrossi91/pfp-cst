@@ -8,13 +8,18 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
 endif()
 
+message(STATUS "Install directory: ${CMAKE_INSTALL_PREFIX}")
+
 # About this project
 # ------------------------------------------------------------------------------
-project(PFP-data-structures)
+project(pfp-cst)
 SET(VERSION_MAJOR "0")
 SET(VERSION_MINOR "1")
 SET(VERSION_PATCH "0")
 SET(VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+
+option(BUILD_TESTS "Set OFF to not compile the tests" ON)
+option(BUILD_BENCHMARKS "Set OFF to not compile the benchmarks" ON)
 
 # Set environment
 # ------------------------------------------------------------------------------
@@ -52,17 +57,13 @@ endif()
 add_subdirectory(include)
 add_subdirectory(src)
 
-option(BUILD_TESTS "Set OFF to not compile the tests" ON)
-
 if(${BUILD_TESTS})
-  message(INFO "Building tests")
+  message(STATUS "Building tests enabled.")
   add_subdirectory(test)
 endif()
 
-option(BUILD_BENCHMARKS "Set OFF to not compile the benchmarks" ON)
-
 if(${BUILD_BENCHMARKS})
-  message(INFO "Building benchmarks")
+  message(STATUS "Building benchmarks enabled.")
   add_subdirectory(benchmarks/src)
 endif()
 

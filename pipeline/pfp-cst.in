@@ -27,7 +27,7 @@ ds_dirname      = dirname
 if not install:
 
   bigbwt_dirname  = os.path.join(dirname, "_deps/bigbwt-build")
-  ds_dirname      = os.path.join(dirname, "test/src")
+  ds_dirname      = os.path.join(dirname, "src")
 
 parse_fasta_exe = os.path.join(bigbwt_dirname, "newscan.x")
 parse_exe       = os.path.join(bigbwt_dirname, "pscan.x")
@@ -142,7 +142,8 @@ def main():
 def delete_temp_files(args,logfile,logfile_name):
     if args.k==False:
       print("==== Deleting temporary files.") # no need to show the command
-      command = "rm -f {file}.parse_old {file}.last".format(file=args.input)
+      command = "rm -f {file}.parse_old {file}.last {file}.dict {file}.parse {file}.occ".format(
+          file=args.input)
       #command = "rm -f {file}.parse {file}.parse_old {file}.last {file}.bwlast {file}.dict {file}.ilist {file}.occ".format(file=args.input)
       if(execute_command(command,logfile,logfile_name)!=True):
         return
