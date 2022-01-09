@@ -36,6 +36,26 @@ build_pfp_cst   = os.path.join(ds_dirname, "pfp-cst_build")
 build_pfp_cst64 = os.path.join(ds_dirname, "pfp-cst_build64")
 
 
+version = @PFP_CST_VERSION@
+
+def getGitDesc():
+  branch = subprocess.check_output(
+      'git rev-parse --abbrev-ref HEAD', shell=True, cwd=dirname).strip().decode("utf-8")
+  commit = subprocess.check_output(
+      'git rev-parse HEAD', shell=True, cwd=dirname).strip().decode("utf-8")
+  try:
+    tag = subprocess.check_output('git describe --exact-match {commit_id}'.format(commit_id=commit),
+                                  shell=True, cwd=dirname).strip().decode("utf-8")
+  except subprocess.CalledProcessError as e:
+    tag = ""
+  return "branch: {branch}\n   tag: {tag}\ncommit: {commit}".format(branch=branch, tag=tag, commit=commit)
+
+def getVersion():
+  if not version:
+    return getGitDesc()
+  else:
+    return version
+
 def main():
   parser = argparse.ArgumentParser(description=Description, formatter_class=argparse.RawTextHelpFormatter)
   parser.add_argument('input', help='input file name', type=str)
@@ -49,13 +69,13 @@ def main():
   parser.add_argument('--build-only', help='build the data structure without storing it (debug only)',action='store_true')
   parser.add_argument('--parsing',  help='stop after the parsing phase (debug only)',action='store_true')
   parser.add_argument('--compress',  help='compress output of the parsing phase (debug only)',action='store_true')
+  parser.add_argument('--version',  action='version', version='%(prog)s\n{}'.format(getVersion()))
   args = parser.parse_args()
 
   if args.f and args.t > 0 and (".fq" in args.input or ".fastq" in args.input or ".fnq" in args.input):
-    print("bigbwt does not current support FASTQ format! Exiting...")
+    print("pfp-cst does not current support FASTQ format! Exiting...")
     return
 
-  
 
   logfile_name = args.input + ".cst.log"
   # get main bigbwt directory

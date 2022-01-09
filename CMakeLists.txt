@@ -69,10 +69,12 @@ endif()
 
 # Configure pipeline for build folder
 set(USE_INSTALL_PATH False)
+set(PFP_CST_VERSION False)
 configure_file(${PROJECT_SOURCE_DIR}/pipeline/pfp-cst.in ${PROJECT_BINARY_DIR}/pfp-cst @ONLY)
 
 # Configure pipeline for install folder
 set(USE_INSTALL_PATH True)
+set(PFP_CST_VERSION "0.1.0")
 configure_file(${PROJECT_SOURCE_DIR}/pipeline/pfp-cst.in ${PROJECT_BINARY_DIR}/pfp-cst.install @ONLY)
 
 
