@@ -32,8 +32,8 @@ if not install:
 parse_fasta_exe = os.path.join(bigbwt_dirname, "newscan.x")
 parse_exe       = os.path.join(bigbwt_dirname, "pscan.x")
 parseNT_exe     = os.path.join(bigbwt_dirname, "newscanNT.x")
-build_pfp_cst   = os.path.join(ds_dirname, "ds_building")
-build_pfp_cst64 = os.path.join(ds_dirname, "ds_building64")
+build_pfp_cst   = os.path.join(ds_dirname, "pfp-cst_build")
+build_pfp_cst64 = os.path.join(ds_dirname, "pfp-cst_build64")
 
 
 def main():
@@ -117,7 +117,7 @@ def main():
           exe = os.path.join(args.bigbwt_dir,build_pfp_cst),
           wsize=args.wsize, file=args.input)
 
-    if args.build_only: command += " -b"
+    if not args.build_only: command += " -s"
     if args.m: command += " -m"
     
     print("==== Computing PFP Compressed Suffix Tree. Command:", command)

@@ -1,4 +1,4 @@
-/* ds_building - Test of construction of prefix free parsing data structures
+/* pfp-cst_build - Test of construction of prefix free parsing CST
     Copyright (C) 2020 Massimiliano Rossi
 
     This program is free software: you can redistribute it and/or modify
@@ -15,8 +15,8 @@
     along with this program.  If not, see http://www.gnu.org/licenses/ .
 */
 /*!
-   \file ds_building.cpp
-   \brief ds_building.cpp test prefix-free parsing data structures construction.
+   \file pfp-cst_build.cpp
+   \brief pfp-cst_build.cpp test prefix-free parsing CST construction.
    \author Massimiliano Rossi
    \date 20/03/2020
 */
@@ -78,7 +78,7 @@ int main(int argc, char* const argv[]) {
   }
 
   if(args.store){
-    verbose("Storing the PFP to file");
+    verbose("Storing the PFP CST to file");
     std::string outfile = args.filename + pf.filesuffix();
     sdsl::store_to_file(pf, outfile.c_str());
   }

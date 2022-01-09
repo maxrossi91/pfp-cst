@@ -50,7 +50,57 @@ endif()
 
 
 add_subdirectory(include)
-add_subdirectory(test)
-add_subdirectory(benchmarks/src)
+add_subdirectory(src)
 
-configure_file(${PROJECT_SOURCE_DIR}/pipeline/pfp_ds ${PROJECT_BINARY_DIR}/pfp_ds)
+option(BUILD_TESTS "Set OFF to not compile the tests" ON)
+
+if(${BUILD_TESTS})
+  message(INFO "Building tests")
+  add_subdirectory(test)
+endif()
+
+option(BUILD_BENCHMARKS "Set OFF to not compile the benchmarks" ON)
+
+if(${BUILD_BENCHMARKS})
+  message(INFO "Building benchmarks")
+  add_subdirectory(benchmarks/src)
+endif()
+
+# Configure pipeline for build folder
+set(USE_INSTALL_PATH False)
+configure_file(${PROJECT_SOURCE_DIR}/pipeline/pfp-cst.in ${PROJECT_BINARY_DIR}/pfp-cst @ONLY)
+
+# Configure pipeline for install folder
+set(USE_INSTALL_PATH True)
+configure_file(${PROJECT_SOURCE_DIR}/pipeline/pfp-cst.in ${PROJECT_BINARY_DIR}/pfp-cst.install @ONLY)
+
+
+install(TARGETS pfp-cst_build pfp-cst_build64 TYPE RUNTIME)
+install(PROGRAMS ${PROJECT_BINARY_DIR}/pfp-cst.install RENAME pfp-cst TYPE BIN)
+
+
+# Configure cpack variables
+# ------------------------------------------------------------------------------
+
+set(CPACK_PACKAGE_VERSION_MAJOR ${VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${VERSION_PATCH})
+set(CPACK_PACKAGE_VERSION "${VERSION}")
+
+include(InstallRequiredSystemLibraries)
+set(CPACK_GENERATOR "STGZ;TGZ;DEB")
+set(CPACK_SOURCE_GENERATOR "TGZ")
+set(CPACK_PACKAGE_VENDOR "University of Florida")
+set(CPACK_PACKAGE_CONTACT "rossi.m@ufl.edu")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "PFP-CST")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+set(CPACK_PACKAGE_NAME "${CMAKE_PROJECT_NAME}")
+set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-sources")
+
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Massimiliano Rossi")
+set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT) 
+set(CPACK_COMPONENTS_GROUPING ALL_COMPONENTS_IN_ONE) # Groupp all components
+set (CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+set(CPACK_DEB_COMPONENT_INSTALL YES)
+include(CPack)
