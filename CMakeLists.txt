@@ -81,7 +81,29 @@ configure_file(${PROJECT_SOURCE_DIR}/pipeline/pfp-cst.in ${PROJECT_BINARY_DIR}/p
 install(TARGETS pfp-cst_build pfp-cst_build64 TYPE RUNTIME)
 install(PROGRAMS ${PROJECT_BINARY_DIR}/pfp-cst.install RENAME pfp-cst TYPE BIN)
 
+# # Installin the library https://dominikberner.ch/cmake-interface-lib/
+# install(TARGETS pfp_cst pfp common gsacak malloc_count
+#         EXPORT ${PROJECT_NAME}_Targets
+#         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
+# include(CMakePackageConfigHelpers)
+# write_basic_package_version_file("pfp-cstConfigVersion.cmake"
+#                                  VERSION ${VERSION}
+#                                  COMPATIBILITY SameMajorVersion)
+
+# install(EXPORT ${PROJECT_NAME}_Targets
+#         FILE ${PROJECT_NAME}Targets.cmake
+#         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
+
+# install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+#               "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+#         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
+
+# install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/pfp 
+#                   ${PROJECT_SOURCE_DIR}/include/common 
+#                   DESTINATION include)
 # Configure cpack variables
 # ------------------------------------------------------------------------------
 

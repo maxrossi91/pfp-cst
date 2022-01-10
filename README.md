@@ -1,19 +1,32 @@
+[![Release](https://img.shields.io/github/release/maxrossi91/moni.svg)](https://github.com/maxrossi91/pfp-cst/releases)
+
 # Prefix-Free Parsng Compressed Suffix Tree
 Compressed suffix tree described in [1], built on the prefix-free parsing of the text [2][3].
 
 # Usage
 
 ```
-usage: pfp_ds infile [-w wsize] [-p mod] [-t threads] [-kvfsm]
-infile - input file name.
-    -w - sliding window size. (def. 10)
-    -p - hash modulus. (def. 100)
-    -t - number of helper threads. (def. None)
-    -k - keep temporary files.
-    -v - verbose.
-    -f - read fasta.
-    -s - store ds.
-    -m - print memory usage.
+usage: pfp-cst [-h] [-w WSIZE] [-p MOD] [-t T] [-k] [-v] [-f] [-m]
+               [--build-only] [--parsing] [--compress] [--version]
+               input
+
+positional arguments:
+  input                 input file name
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -w WSIZE, --wsize WSIZE
+                        sliding window size (def. 10)
+  -p MOD, --mod MOD     hash modulus (def. 100)
+  -t T                  number of helper threads (def. None)
+  -k                    keep temporary files
+  -v                    verbose
+  -f                    read fasta
+  -m                    print memory usage
+  --build-only          build the data structure without storing it (debug only)
+  --parsing             stop after the parsing phase (debug only)
+  --compress            compress output of the parsing phase (debug only)
+  --version             show program's version number and exit
 ```
 
 # Example
@@ -27,14 +40,23 @@ git clone https://github.com/maxrossi91/pfp-cst
 
 ```console
 mkdir build
-cd build; cmake ..
+cd build; 
+cmake ..
 make
 ```
+
+### Install
+
+```console
+make install
+```
+
+This command will install the binaries to the default install location (e.g., `/usr/local/bin` for Ubuntu users). If the user wants the binary in some other custom location, this can be done using `cmake -DCMAKE_INSTALL_PERFIX=<dest> ..` instead of `cmake ..` in the compile sequence of commands, where `<dest>` is the preferred destination directory.
 
 ### Run
 
 ```console
-./pfp_ds ../data/yeast.fasta
+./pfp-cst ../data/yeast.fasta -f
 ```
 
 # External resources
