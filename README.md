@@ -6,7 +6,7 @@ Compressed suffix tree described in [1], built on the prefix-free parsing of the
 If you use the PFP-CST in your research, please cite:
 >Christina Boucher, Ondřej Cvacho, Travis Gagie, Jan Holub, Giovanni Manzini, Gonzalo Navarro, and Massimiliano Rossi . *"PFP Compressed Suffix Tree"*, In Proc. of the SIAM Symposium onAlgorithm Engineering and Experiments (ALENEX21), pp. 60-72. (2021).
 
-BibTeX [here](/README.md/#Citation)
+BibTeX [here](#Citation)
 
 # Usage
 
