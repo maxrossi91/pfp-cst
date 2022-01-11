@@ -1,6 +1,6 @@
 [![Release](https://img.shields.io/github/release/maxrossi91/pfp-cst.svg)](https://github.com/maxrossi91/pfp-cst/releases)
 
-# Prefix-Free Parsng Compressed Suffix Tree
+# Prefix-Free Parsing Compressed Suffix Tree
 Compressed suffix tree described in [1], built on the prefix-free parsing of the text [2][3].
 
 If you use the PFP-CST in your research, please cite:
@@ -109,8 +109,7 @@ Now you can use all the CST queries from the `cst` variable.
     node_t slink(node_t v, size_t i)
     // The lowest common ancestor of v and w.
     node_t lca(node_t v, node_t w)
-    // The node w s.t. the first letter on edge (v, w) is a. 
-    // Retrn root if no child with letter a exists.
+    // The node w s.t. the first letter on edge (v, w) is a. Retrn root if no child with letter a exists.
     node_t child(node_t v, uint8_t a)
     // The letter s(v)[i].
     uint8_t letter(node_t v, size_t i)
@@ -143,6 +142,9 @@ Now you can use all the CST queries from the `cst` variable.
 
 ```
 
+### Project Mockup
+
+[pfp-cst_app_example](https://github.com/maxrossi91/pfp-cst_app_example)
 
 # Example
 ### Download
