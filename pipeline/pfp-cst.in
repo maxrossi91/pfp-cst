@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+
+# Edited from bigbwt script file
+
+import sys, time, argparse, subprocess, os.path
+
+Description = """
+Pipeline to build the Prefix-Free Parsing Compressed Suffix Tree described in
+
+   "PFP Compressed Suffix Tree"
+   by Christina Boucher, Ondřej Cvacho, Travis Gagie, 
+      Jan Holub, Giovanni Manzini, Gonzalo Navarro, and Massimiliano Rossi
+
+The input file cannot contain the characters 0, 1 or 2 which are
+used internally by the algorithm.
+
+Report bugs to Massimiliano Rossi (rossi.m@ufl.edu)
+"""
+
+install = @USE_INSTALL_PATH@
+
+dirname         = os.path.dirname(os.path.abspath(__file__))
+
+bigbwt_dirname  = dirname
+ds_dirname      = dirname
+
+if not install:
+
+  bigbwt_dirname  = os.path.join(dirname, "_deps/bigbwt-build")
+  ds_dirname      = os.path.join(dirname, "src")
+
+parse_fasta_exe = os.path.join(bigbwt_dirname, "newscan.x")
+parse_exe       = os.path.join(bigbwt_dirname, "pscan.x")
+parseNT_exe     = os.path.join(bigbwt_dirname, "newscanNT.x")
+build_pfp_cst   = os.path.join(ds_dirname, "pfp-cst_build")
+build_pfp_cst64 = os.path.join(ds_dirname, "pfp-cst_build64")
+
+
+version = @PFP_CST_VERSION@
+
+def getGitDesc():
+  branch = subprocess.check_output(
+      'git rev-parse --abbrev-ref HEAD', shell=True, cwd=dirname).strip().decode("utf-8")
+  commit = subprocess.check_output(
+      'git rev-parse HEAD', shell=True, cwd=dirname).strip().decode("utf-8")
+  try:
+    tag = subprocess.check_output('git describe --exact-match {commit_id}'.format(commit_id=commit),
+                                  shell=True, cwd=dirname).strip().decode("utf-8")
+  except subprocess.CalledProcessError as e:
+    tag = ""
+  return "branch: {branch}\n   tag: {tag}\ncommit: {commit}".format(branch=branch, tag=tag, commit=commit)
+
+def getVersion():
+  if not version:
+    return getGitDesc()
+  else:
+    return version
+
+def main():
+  parser = argparse.ArgumentParser(description=Description, formatter_class=argparse.RawTextHelpFormatter)
+  parser.add_argument('input', help='input file name', type=str)
+  parser.add_argument('-w', '--wsize', help='sliding window size (def. 10)', default=10, type=int)
+  parser.add_argument('-p', '--mod', help='hash modulus (def. 100)', default=100, type=int)
+  parser.add_argument('-t', help='number of helper threads (def. None)', default=0, type=int)
+  parser.add_argument('-k', help='keep temporary files',action='store_true')
+  parser.add_argument('-v', help='verbose',action='store_true')
+  parser.add_argument('-f', help='read fasta',action='store_true')
+  parser.add_argument('-m', help='print memory usage',action='store_true')
+  parser.add_argument('--build-only', help='build the data structure without storing it (debug only)',action='store_true')
+  parser.add_argument('--parsing',  help='stop after the parsing phase (debug only)',action='store_true')
+  parser.add_argument('--compress',  help='compress output of the parsing phase (debug only)',action='store_true')
+  parser.add_argument('--version',  action='version', version='%(prog)s\n{}'.format(getVersion()))
+  args = parser.parse_args()
+
+  if args.f and args.t > 0 and (".fq" in args.input or ".fastq" in args.input or ".fnq" in args.input):
+    print("pfp-cst does not current support FASTQ format! Exiting...")
+    return
+
+
+  logfile_name = args.input + ".cst.log"
+  # get main bigbwt directory
+  args.bigbwt_dir = os.path.split(sys.argv[0])[0]
+  print("Sending logging messages to file:", logfile_name)
+  with open(logfile_name,"a") as logfile:
+
+    # ---------- parsing of the input file
+    start0 = start = time.time()
+    if args.t>0:
+      if args.f:
+        command = "{exe} {file} -w {wsize} -p {modulus} -t {th} -f".format(
+                exe = os.path.join(args.bigbwt_dir,parse_fasta_exe),
+                wsize=args.wsize, modulus = args.mod, th=args.t, file=args.input)
+      else:
+        command = "{exe} {file} -w {wsize} -p {modulus} -t {th}".format(
+                exe = os.path.join(args.bigbwt_dir,parse_exe),
+                wsize=args.wsize, modulus = args.mod, th=args.t, file=args.input)
+    else:
+      command = "{exe} {file} -w {wsize} -p {modulus}".format(
+              exe = os.path.join(args.bigbwt_dir,parseNT_exe),
+              wsize=args.wsize, modulus = args.mod, file=args.input)
+    if args.v: command += " -v"
+    if args.f: command += " -f"
+    print("==== Parsing. Command:", command)
+    if(execute_command(command,logfile,logfile_name)!=True):
+      return
+    print("Elapsed time: {0:.4f}".format(time.time()-start))
+    if args.parsing:
+      # delete temporary parsing files
+      command = "rm -f {file}.parse_old {file}.last".format(file=args.input) # check format when -t is used
+      if(execute_command(command,logfile,logfile_name)!=True):
+        return
+      print("==== Stopping after the parsing phase as requested")
+      return
+    elif args.compress:
+      # save parsing files
+      start = time.time()
+      command = "tar -cJf {file}.parse.txz {file}.parse {file}.dict".format(file=args.input)
+      print("==== Compressing. Command:", command)
+      if(execute_command(command,logfile,logfile_name,env={"XZ_OPT":"-9"})!=True):
+        return
+      print("Elapsed time: {0:.4f}".format(time.time()-start))
+      delete_temp_files(args,logfile,logfile_name)
+      print("==== Done: Parsing output xz-compressed as requested")
+      return
+
+    # ----------- computation of the PFP data structures
+    start = time.time()
+    parse_size = os.path.getsize(args.input+".parse")/4
+    dictionary_size = os.path.getsize(args.input+".dict")
+
+    if(parse_size >=  (2**31-1) or dictionary_size >=  (2**31-1) ):
+      command = "{exe} {file} -w {wsize}".format(
+                exe = os.path.join(args.bigbwt_dir,build_pfp_cst64),
+                wsize=args.wsize, file=args.input)
+    else:
+      command = "{exe} {file} -w {wsize}".format(
+          exe = os.path.join(args.bigbwt_dir,build_pfp_cst),
+          wsize=args.wsize, file=args.input)
+
+    if not args.build_only: command += " -s"
+    if args.m: command += " -m"
+    
+    print("==== Computing PFP Compressed Suffix Tree. Command:", command)
+    if(execute_command(command,logfile,logfile_name)!=True):
+      return
+    print("Elapsed time: {0:.4f}".format(time.time()-start));
+    print("Total construction time: {0:.4f}".format(time.time()-start0))
+    # ---- print elapsed time to file
+    command = "echo Total construction time: {0:.4f}".format(time.time()-start0)
+    if(execute_command(command,logfile,logfile_name)!=True):
+      return
+    # ---- delete intermediate files
+    delete_temp_files(args,logfile,logfile_name)
+
+    # --- start checking ---
+ 
+    # --- end checking ---
+
+  print("==== Done")
+
+# delete intermediate files
+def delete_temp_files(args,logfile,logfile_name):
+    if args.k==False:
+      print("==== Deleting temporary files.") # no need to show the command
+      command = "rm -f {file}.parse_old {file}.last {file}.dict {file}.parse {file}.occ".format(
+          file=args.input)
+      #command = "rm -f {file}.parse {file}.parse_old {file}.last {file}.bwlast {file}.dict {file}.ilist {file}.occ".format(file=args.input)
+      if(execute_command(command,logfile,logfile_name)!=True):
+        return
+      for i in range(args.t):
+        command = "rm -f {file}.{i}.parse_old {file}.{i}.last".format(file=args.input, i=i)
+        if(execute_command(command,logfile,logfile_name)!=True):
+          return
+
+# execute command: return True is everything OK, False otherwise
+def execute_command(command,logfile,logfile_name,env=None):
+  try:
+    #subprocess.run(command.split(),stdout=logfile,stderr=logfile,check=True,env=env)
+    subprocess.check_call(command.split(),stdout=logfile,stderr=logfile,env=env)
+  except subprocess.CalledProcessError:
+    print("Error executing command line:")
+    print("\t"+ command)
+    print("Check log file: " + logfile_name)
+    return False
+  return True
+
+
+
+if __name__ == '__main__':
+    main()
